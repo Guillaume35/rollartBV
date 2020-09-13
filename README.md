@@ -1,35 +1,35 @@
-# rollartBV
+    # rollartBV
 
-## Development version
+    ## Development version
 
-This program is currently in heavy development. This means that it is not completely functional
-and should not be used for production.
+    This program is currently in heavy development. This means that it is not completely functional
+    and should not be used for production.
 
-Binary exectuable file is not available currently. See usage section for more information.
+    The binary executable file is not available currently. See usage section for more information.
 
-## Usage
+    ## Usage
 
-This program is tested under Ubuntu Linux 20.04 distribution.
+    This program is tested under Ubuntu Linux 20.04 distribution.
 
-### Dependencies
+    ### Dependencies
 
-- Python3
-- Tkinter for python
+    - Python3
+    - Tkinter for python
 
-```
-sudo apt install python3 python3-tk
-```
+    ```
+    sudo apt install python3 python3-tk
+    ```
 
-### Start
+    ### Start
 
-Go to the extraction folder with the folowing command :
+    Go to the extraction folder with the following command:
 
-```
-cd folder/where/rollartBV/is/saved
-```
+    ```
+    cd folder/where/rollartBV/is/saved
+    ```
 
-Exectute the folowing
+    Execute the following
 
-```
-python3 ./rollartBV.py
-```
+    ```
+    python3 ./rollartBV.py
+    ```
