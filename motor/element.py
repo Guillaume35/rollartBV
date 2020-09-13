@@ -1,4 +1,4 @@
-import json
+import sqlite3
 import os
 from pathlib import Path
 
@@ -7,9 +7,9 @@ class Element:
     def __init__(self, code):
 
         home_path = str(Path.home())
+        db_path = home_path + '/.rollartBV/structure.db'
 
-        if not os.path.exists(home_path + '/.rollartBV/elements'):
-            os.makedirs(home_path + '/.rollartBV/elements')
+        self.conn = sqlite3.connect(db_path)
 
         if type(code) is dict:
             data = code
@@ -17,11 +17,16 @@ class Element:
             self.hydrate(data)
 
         else:
-            table_file = home_path + '/.rollartBV/elements/' + code + '.json'
+            c = self.conn.cursor()
+            c.row_factory = sqlite3.Row
+            c.execute("SELECT * FROM `elements` WHERE `code` = ? LIMIT 1", (code,))
 
-            with open(table_file) as f:
-                data = json.load(f)
-                self.hydrate(data)
+            data = c.fetchone()
+
+            if not data:
+                data = {}
+
+            self.hydrate(data)
 
     # Hydrate values to class
     def hydrate(self, data):
@@ -43,7 +48,8 @@ class Element:
             'qoe3': 0,
             'qoem1': 0,
             'qoem2': 0,
-            'qoem3': 0
+            'qoem3': 0,
+            'type': 'NT'
         }
 
         for key in default_values:
@@ -67,36 +73,43 @@ class Element:
         self.qoem1 = data['qoem1']
         self.qoem2 = data['qoem2']
         self.qoem3 = data['qoem3']
+        self.type = data['type']
 
-    # record data to json datafile
+    # record data to database
     def record(self):
         # creating dictionnary
-        data = {
-            'name': self.name,
-            'code': self.code,
-            'base': self.base,
-            'under': self.under,
-            'half': self.half,
-            'down': self.down,
-            'base_combo': self.base_combo,
-            'combo_under': self.combo_under,
-            'combo_half': self.combo_half,
-            'combo_down': self.combo_down,
-            'qoe1': self.qoe1,
-            'qoe2': self.qoe2,
-            'qoe3': self.qoe3,
-            'qoem1': self.qoem1,
-            'qoem2': self.qoem2,
-            'qoem3': self.qoem3
-        }
+        data = (self.code, self.name, self.base, self.under, self.half, self.down, self.base_combo, self.combo_under, self.combo_half, self.combo_down, self.qoe1, self.qoe2, self.qoe3, self.qoem1, self.qoem2, self.qoem3, self.type)
 
-        # Get path to element file
-        home_path = str(Path.home())
-        table_file = home_path + '/.rollartBV/elements/' + self.code + '.json'
+        c = self.conn.cursor()
 
-        # Replace data or create file
-        with open(table_file, 'w') as f:
-            json.dump(data, f)
+        c.row_factory = sqlite3.Row
+        c.execute("SELECT * FROM `elements` WHERE `code` = ? LIMIT 1", (self.code,))
+        exists = c.fetchone()
+
+        if not exists:
+            c.execute('INSERT INTO `elements` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', data)
+
+        else:
+            c.execute('''UPDATE `elements` SET
+                `name` = ?,
+                `base` = ?,
+                `under` = ?,
+                `half` = ?,
+                `down` = ?,
+                `base_combo` = ?,
+                `combo_under` = ?,
+                `combo_half` = ?,
+                `combo_down` = ?,
+                `qoe1` = ?,
+                `qoe2` = ?,
+                `qoe3` = ?,
+                `qoem1` = ?,
+                `qoem2` = ?,
+                `qoem3` = ?,
+                `type` = ?
+            WHERE `code` = ?''', (self.name, self.base, self.under, self.half, self.down, self.base_combo, self.combo_under, self.combo_half, self.combo_down, self.qoe1, self.qoe2, self.qoe3, self.qoem1, self.qoem2, self.qoem3, self.type, self.code))
+
+        self.conn.commit()
 
 
     # Get all values in a dict
@@ -117,19 +130,79 @@ class Element:
             'qoe3': self.qoe3,
             'qoem1': self.qoem1,
             'qoem2': self.qoem2,
-            'qoem3': self.qoem3
+            'qoem3': self.qoem3,
+            'type': self.type
         }
 
         return data
 
     # Remove element from database
     def delete(self):
-        # Get path to element file
-        home_path = str(Path.home())
-        table_file = home_path + '/.rollartBV/elements/' + self.code + '.json'
-
-        # Remove file
-        os.remove(table_file)
+        c = self.conn.cursor()
+        c.execute('DELETE FROM `elements` WHERE `code` = ?', (self.code,))
+        self.conn.commit()
 
 if __name__ == "__main__":
-    element = Element()
+
+    home_path = str(Path.home())
+    db_path = home_path + '/.rollartBV/structure.db'
+
+    conn = sqlite3.connect(db_path)
+
+    c = conn.cursor()
+
+    print ("Create elements table")
+
+    c.execute('''CREATE TABLE IF NOT EXISTS `elements`
+        (`code` TEXT,
+        `name` TEXT,
+        `base` REAL,
+        `under` REAL,
+        `half` REAL,
+        `down` REAL,
+        `base_combo` REAL,
+        `combo_under` REAL,
+        `combo_half` REAL,
+        `combo_down` REAL,
+        `qoe1` REAL,
+        `qoe2` REAL,
+        `qoe3` REAL,
+        `qoem1` REAL,
+        `qoem2` REAL,
+        `qoem3` REAL,
+        `type` TEXT)''')
+
+    c.execute("PRAGMA table_info(`elements`)")
+    fields = c.fetchall()
+
+    existing = []
+
+    for field in fields:
+        existing.append(field[1])
+
+    fields = {
+        'code': 'TEXT',
+        'name': 'TEXT',
+        'base': 'REAL',
+        'under': 'REAL',
+        'half': 'REAL',
+        'down': 'REAL',
+        'base_combo': 'REAL',
+        'combo_under': 'REAL',
+        'combo_half': 'REAL',
+        'combo_down': 'REAL',
+        'qoe1': 'REAL',
+        'qoe2': 'REAL',
+        'qoe3': 'REAL',
+        'qoem1': 'REAL',
+        'qoem2': 'REAL',
+        'qoem3': 'REAL',
+        'type':'TEXT'
+    }
+
+    for field, type in fields.items():
+        if not field in existing:
+            print ("Add "+field+" "+type+" to table")
+            c.execute("ALTER TABLE `elements` ADD COLUMN '%s' '%s'" % (field, type))
+
+    conn.close()

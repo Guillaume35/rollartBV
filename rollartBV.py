@@ -1,6 +1,8 @@
 from tkinter import *
 import elements_database
+import types_database
 from motor.program import *
+from functools import partial
 
 # Create main window
 window = Tk()
@@ -11,11 +13,13 @@ window.geometry("500x720")
 window.minsize(480,360)
 window.config(background="#0a1526")
 
+# global variables
 frame = None
 skater_entry = None
 program_entry = None
 error_label = None
 element_i = 1
+elements_list_frame = None
 
 
 #start program
@@ -86,8 +90,11 @@ def home():
     start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=start)
     start_btn.pack(pady=5, fill=X)
 
-    config_btn = Button(menu_frame, text="Elements database", font=("sans-serif", 12), bg="#dfe7e8", command=elements_database.open_window)
-    config_btn.pack(pady=5, fill=X)
+    elements_db_btn = Button(menu_frame, text="Elements database", font=("sans-serif", 12), bg="#dfe7e8", command=elements_database.open_window)
+    elements_db_btn.pack(pady=5, fill=X)
+
+    types_db_btn = Button(menu_frame, text="Types database", font=("sans-serif", 12), bg="#dfe7e8", command=types_database.open_window)
+    types_db_btn.pack(pady=5, fill=X)
 
     # add to window
     title_frame.pack(pady=15)
@@ -135,6 +142,7 @@ def program_element_form():
 
     global frame
     global element_i
+    global elements_list_frame
 
     # create frame
     element_frame = Frame(frame, bg="#0a1526")
@@ -155,23 +163,36 @@ def program_element_form():
     # list elements types
     btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
     btns = []
+    actions = []
     i = 0
 
     for btnLabel in btnLabels:
 
         Grid.columnconfigure(element_frame_types, i, weight=1)
 
-        btns.append(Button(element_frame_types, text=btnLabel, font=("sans-serif", 11), bg="#dfe7e8"))
+        actions.append(partial(display_types_form, btnLabel))
+
+        btns.append(Button(element_frame_types, text=btnLabel, font=("sans-serif", 11), bg="#dfe7e8", command=actions[i]))
         btns[i].grid(row=0, column=i, sticky="nsew")
         i += 1
 
     element_frame_types.pack(fill=X)
+
+    elements_list_frame = Frame(element_frame_items, bg="#0a1526")
+    elements_list_frame.pack(fill=X)
 
     element_frame_items.grid(row=0, column=1, sticky="nsew");
 
     element_frame.pack(pady=5, fill=X)
 
     element_i += 1
+
+def display_types_form(typeCode):
+
+    global elements_list_frame
+
+    label = Label(elements_list_frame, text="test "+typeCode, font=("sans-serif", 11), bg="#0a1526", fg="white")
+    label.pack()
 
 home()
 
