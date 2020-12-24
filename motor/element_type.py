@@ -84,6 +84,8 @@ if __name__ == "__main__":
 
     conn = sqlite3.connect(db_path)
 
+    print ("Create elements types table")
+
     c = conn.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS `elements_types` (`code` TEXT, `name` TEXT)")
 
