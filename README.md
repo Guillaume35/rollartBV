@@ -26,10 +26,16 @@ sudo apt install python3 python3-tk
 Installation system is not available. You'll need to create all database by executing each
 motors/* python file.
 
-Go to motors/ folder with the following command:
+First, create a .rollarBV/ folder in your home directory
 
 ```
-cd folder/where/rollartBV/is/saved
+mkdir /home/HOME_DIRECTORY/.rollartBV
+```
+
+Then, go to motors/ folder with the following command:
+
+```
+cd folder/where/rollartBV/is/saved/motor
 ```
 
 Execute each python file:
