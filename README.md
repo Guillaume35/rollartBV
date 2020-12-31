@@ -23,26 +23,14 @@ sudo apt install python3 python3-tk
 
 ### Generate database
 
-Installation system is not available. You'll need to create all database by executing each
-motors/* python file.
+At program starting, database are checked and created if needed. If data structure has changed
+with a new version, it will be updated in your current database without the need of any update 
+system.
 
-First, create a .rollarBV/ folder in your home directory
+However, at first start of the program, create a .rollarBV/ folder in your home directory
 
 ```
 mkdir /home/HOME_DIRECTORY/.rollartBV
-```
-
-Then, go to motors/ folder with the following command:
-
-```
-cd folder/where/rollartBV/is/saved/motor
-```
-
-Execute each python file:
-
-```
-python3 element_type.py
-python3 element.py
 ```
 
 ### Start
