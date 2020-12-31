@@ -1,6 +1,5 @@
 import sqlite3
 from tkinter import *
-from motor.element_type import *
 from apps.list import *
 
 

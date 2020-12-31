@@ -3,13 +3,14 @@ from functools import partial
 
 class ListApp:
 
-    def __init__(self, window, className, title="List", data=[], labels=[]):
+    def __init__(self, window, className, title="List", data=[], labels=[], actions=[]):
 
         self.frame = Frame(window, bg="#0a1526")
         self.title_frame = Frame(self.frame, bg="#0a1526")
         self.table_frame = Frame(self.frame, bg="#0a1526")
         self.data = data
         self.labels = labels
+        self.actions = actions
         self.title = title
         self.entries = []
         self.header = []
@@ -43,14 +44,25 @@ class ListApp:
             self.entries[i][j].insert(0, value)
             self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
-        action = partial(self.record, i)
+        action = partial(self.record, i, data)
         self.entries[i].append(Button(self.table_frame, text="Save", font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
         self.entries[i][j+1].grid(row=i+1, column=j+1, sticky="nesw")
 
+        for a in range(len(self.actions)):
 
-    def record(self, row):
+            actionData = self.actions[a]
 
-        data = {}
+            if 'params' in actionData:
+                action = partial(actionData['action'], data, actionData['params'])
+            
+            else:
+                action = partial(actionData['action'], data)
+
+            self.entries[i].append(Button(self.table_frame, text=actionData['label'], font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
+            self.entries[i][j+a+2].grid(row=i+1, column=j+a+2, sticky="nesw")
+
+
+    def record(self, row, data):
 
         for i in range(len(self.labels)):
             data[self.labels[i]['var']] = self.entries[row][i].get()
@@ -99,7 +111,7 @@ class ListApp:
         # New element form
         self.header.append(Label(self.table_frame, text="", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white"))
         self.header[i+1].grid(row=0, column=i+1)
-        action = partial(self.record, 0)
+        action = partial(self.record, 0, {})
         self.entries[0].append(Button(self.table_frame, text="Add", width=5, font=("sans-serif", 10), command=action, bg="#dfe7e8", borderwidth=1))
         self.entries[0][i+1].grid(row=1, column=i+1, sticky="nesw")
 

@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from pathlib import Path
+import tools
 
 class Element:
 
@@ -18,7 +19,7 @@ class Element:
 
         else:
             c = self.conn.cursor()
-            c.row_factory = sqlite3.Row
+            c.row_factory = tools.dict_factory
             c.execute("SELECT * FROM `elements` WHERE `code` = ? LIMIT 1", (code,))
 
             data = c.fetchone()
@@ -34,7 +35,7 @@ class Element:
         # check data integrity
         default_values = {
             'name': 'Unnamed',
-            'code': 'NV',
+            'code': None,
             'base': 0,
             'under': 0,
             'half': 0,
@@ -142,67 +143,68 @@ class Element:
         c.execute('DELETE FROM `elements` WHERE `code` = ?', (self.code,))
         self.conn.commit()
 
-if __name__ == "__main__":
+    # Create database structure
+    @staticmethod
+    def database_integrity():
+        home_path = str(Path.home())
+        db_path = home_path + '/.rollartBV/structure.db'
 
-    home_path = str(Path.home())
-    db_path = home_path + '/.rollartBV/structure.db'
+        conn = sqlite3.connect(db_path)
 
-    conn = sqlite3.connect(db_path)
+        c = conn.cursor()
 
-    c = conn.cursor()
+        print ("Check elements table")
 
-    print ("Create elements table")
+        c.execute('''CREATE TABLE IF NOT EXISTS `elements`
+            (`code` TEXT,
+            `name` TEXT,
+            `base` REAL,
+            `under` REAL,
+            `half` REAL,
+            `down` REAL,
+            `base_combo` REAL,
+            `combo_under` REAL,
+            `combo_half` REAL,
+            `combo_down` REAL,
+            `qoe1` REAL,
+            `qoe2` REAL,
+            `qoe3` REAL,
+            `qoem1` REAL,
+            `qoem2` REAL,
+            `qoem3` REAL,
+            `type` TEXT)''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS `elements`
-        (`code` TEXT,
-        `name` TEXT,
-        `base` REAL,
-        `under` REAL,
-        `half` REAL,
-        `down` REAL,
-        `base_combo` REAL,
-        `combo_under` REAL,
-        `combo_half` REAL,
-        `combo_down` REAL,
-        `qoe1` REAL,
-        `qoe2` REAL,
-        `qoe3` REAL,
-        `qoem1` REAL,
-        `qoem2` REAL,
-        `qoem3` REAL,
-        `type` TEXT)''')
+        c.execute("PRAGMA table_info(`elements`)")
+        fields = c.fetchall()
 
-    c.execute("PRAGMA table_info(`elements`)")
-    fields = c.fetchall()
+        existing = []
 
-    existing = []
+        for field in fields:
+            existing.append(field[1])
 
-    for field in fields:
-        existing.append(field[1])
+        fields = {
+            'code': 'TEXT',
+            'name': 'TEXT',
+            'base': 'REAL',
+            'under': 'REAL',
+            'half': 'REAL',
+            'down': 'REAL',
+            'base_combo': 'REAL',
+            'combo_under': 'REAL',
+            'combo_half': 'REAL',
+            'combo_down': 'REAL',
+            'qoe1': 'REAL',
+            'qoe2': 'REAL',
+            'qoe3': 'REAL',
+            'qoem1': 'REAL',
+            'qoem2': 'REAL',
+            'qoem3': 'REAL',
+            'type':'TEXT'
+        }
 
-    fields = {
-        'code': 'TEXT',
-        'name': 'TEXT',
-        'base': 'REAL',
-        'under': 'REAL',
-        'half': 'REAL',
-        'down': 'REAL',
-        'base_combo': 'REAL',
-        'combo_under': 'REAL',
-        'combo_half': 'REAL',
-        'combo_down': 'REAL',
-        'qoe1': 'REAL',
-        'qoe2': 'REAL',
-        'qoe3': 'REAL',
-        'qoem1': 'REAL',
-        'qoem2': 'REAL',
-        'qoem3': 'REAL',
-        'type':'TEXT'
-    }
+        for field, type in fields.items():
+            if not field in existing:
+                print ("Add "+field+" "+type+" to table")
+                c.execute("ALTER TABLE `elements` ADD COLUMN '%s' '%s'" % (field, type))
 
-    for field, type in fields.items():
-        if not field in existing:
-            print ("Add "+field+" "+type+" to table")
-            c.execute("ALTER TABLE `elements` ADD COLUMN '%s' '%s'" % (field, type))
-
-    conn.close()
+        conn.close()

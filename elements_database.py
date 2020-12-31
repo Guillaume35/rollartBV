@@ -1,6 +1,7 @@
 import sqlite3
 from tkinter import *
 from apps.list import *
+from pathlib import Path
 from motor.element import *
 
 def open_window():

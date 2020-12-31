@@ -77,17 +77,18 @@ class ElementType:
         c.execute('DELETE FROM `elements_types` WHERE `code` = ?', (self.code,))
         self.conn.commit()
 
-if __name__ == "__main__":
+    # Create database structure
+    @staticmethod
+    def database_integrity():
+        home_path = str(Path.home())
+        db_path = home_path + '/.rollartBV/structure.db'
 
-    home_path = str(Path.home())
-    db_path = home_path + '/.rollartBV/structure.db'
+        conn = sqlite3.connect(db_path)
 
-    conn = sqlite3.connect(db_path)
+        print ("Check elements types table")
 
-    print ("Create elements types table")
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS `elements_types` (`code` TEXT, `name` TEXT)")
 
-    c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS `elements_types` (`code` TEXT, `name` TEXT)")
-
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
