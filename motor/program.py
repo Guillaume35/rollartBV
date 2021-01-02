@@ -46,7 +46,7 @@ class Program:
             'id': 0,
             'skater': 'unamed-skater',
             'skater_id': 0,
-            'program_name': 'FREE',
+            'program_name': 'long',
             'start': 0,
             'end': 0,
             'duration': 0,
@@ -61,7 +61,9 @@ class Program:
             'penalization': 0.0,
             'score': 0.0,
             'category': 0,
-            'session': 0
+            'session': 0,
+            'status': 'start',
+            'fall': 0
         }
 
         for key in values:
@@ -88,6 +90,9 @@ class Program:
         self.score = values['score']
         self.category = values['category']
         self.session = values['session']
+        self.status = values['status']
+        self.fall = values['fall']
+
 
     
     # Get program content
@@ -140,6 +145,9 @@ class Program:
         self.program_value = round(self.technical_score + self.components_score, 2)
         self.score = round(self.program_value + self.penalization, 2)
 
+        if self.score < 0:
+            self.score = 0
+
     # record data to database
     def record(self):
         c = self.conn.cursor()
@@ -167,9 +175,11 @@ class Program:
                     `program_value`,
                     `score`,
                     `category`,
-                    `session`
+                    `session`,
+                    `status`,
+                    `fall`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.skater, 
                     self.skater_id, 
@@ -188,7 +198,9 @@ class Program:
                     self.program_value,
                     self.score,
                     self.category,
-                    self.session
+                    self.session,
+                    self.status,
+                    self.fall
                 ))
             
             # get last id
@@ -216,7 +228,9 @@ class Program:
                             `program_value` = ?,
                             `score` = ?,
                             `category` = ?,
-                            `session` = ?
+                            `session` = ?,
+                            `status` = ?,
+                            `fall` = ?
                         WHERE `id` = ?''', (
                             self.skater, 
                             self.skater_id, 
@@ -236,6 +250,8 @@ class Program:
                             self.score,
                             self.category,
                             self.session,
+                            self.status,
+                            self.fall,
                             self.id
                         ))
 
@@ -262,7 +278,9 @@ class Program:
             'penalization': self.penalization,
             'score': self.score,
             'category': self.category,
-            'session': self.session
+            'session': self.session,
+            'status': self.status,
+            'fall': self.fall
         }
 
         return data
@@ -304,7 +322,9 @@ class Program:
             `penalization` REAL,
             `score` REAL,
             `category` INTEGER,
-            `session` INTEGER)''')
+            `session` INTEGER,
+            `status` TEXT,
+            `fall` INTEGER)''')
 
         c.execute("PRAGMA table_info(`programs`)")
         fields = c.fetchall()
@@ -332,7 +352,9 @@ class Program:
             'penalization': 'REAL',
             'score': 'REAL',
             'category': 'INTEGER',
-            'session': 'INTEGER'
+            'session': 'INTEGER',
+            'status': 'TEXT',
+            'fall': 'INTEGER'
         }
 
         for field, type in fields.items():

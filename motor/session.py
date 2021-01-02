@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import time
 import tools
+from motor.category import *
 
 class Session:
 
@@ -100,6 +101,20 @@ class Session:
         c = self.conn.cursor()
         c.execute('UPDATE `sessions` SET `lock` = "0"')
         self.conn.commit()
+
+    def getCategories(self):
+        c = self.conn.cursor()
+        c.execute('SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order`, `id`', (self.id, ))
+        c.row_factory = tools.dict_factory
+        
+        data = c.fetchall()
+
+        categories = []
+
+        for d in data:
+            categories.append(Category(d))
+
+        return categories
 
     # get opened session
     @classmethod

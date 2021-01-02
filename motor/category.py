@@ -1,6 +1,8 @@
 import sqlite3
 import os
 from pathlib import Path
+from motor.skater import *
+from motor.program import *
 import time
 import tools
 
@@ -48,7 +50,8 @@ class Category:
             'short': 0.0,
             'long': 1.0,
             'short_components': 1.0,
-            'long_components': 1.0
+            'long_components': 1.0,
+            'status': 'unstarted'
         }
 
         for key in values:
@@ -64,6 +67,8 @@ class Category:
         self.long = values['long']
         self.short_components = values['short_components']
         self.long_components = values['long_components']
+        self.status = values['status']
+
 
     # record data to database
     def record(self):
@@ -80,21 +85,45 @@ class Category:
                     `session`,
                     `short`,
                     `long`,
-                    `short_components`
-                    `long_components`
+                    `short_components`,
+                    `long_components`,
+                    `status`
                 ) 
-                VALUES (?,?,?,?,?,?,?)''', (self.name, self.order, self.session, self.short, self.long, self.short_components, self.long_components))
+                VALUES (?,?,?,?,?,?,?,?)''', 
+                (
+                    self.name, 
+                    self.order, 
+                    self.session, 
+                    self.short, 
+                    self.long, 
+                    self.short_components, 
+                    self.long_components,
+                    self.status
+                ))
 
         else:
             c.execute('''UPDATE `categories` SET 
                             `name` = ?, 
                             `order` = ?,
                             `session` = ?,
-                            ̀`short` = ?,
+                            `short` = ?,
                             `long` = ?,
                             `short_components` = ?,
-                            `long_components` = ? 
-                        WHERE `id` = ?''', (self.name, self.order, self.session, self.short, self.long, self.short_components, self.long_components, self.id))
+                            `long_components` = ?,
+                            `status` = ?
+                        WHERE `id` = ?''', 
+                    (
+                        
+                        self.name, 
+                        self.order, 
+                        self.session, 
+                        self.short, 
+                        self.long, 
+                        self.short_components, 
+                        self.long_components, 
+                        self.status, 
+                        self.id
+                    ))
 
         self.conn.commit()
 
@@ -108,10 +137,85 @@ class Category:
             'short': self.short,
             'long': self.long,
             'short_components': self.short_components,
-            'long_components': self.long_components
+            'long_components': self.long_components,
+            'status': self.status
         }
 
         return data
+
+    def getCurrentSkater(self):
+        c = self.conn.cursor()
+
+        c.row_factory = tools.dict_factory
+
+        if str(self.status).upper() == 'UNSTARTED' or not self.status:
+            if self.short > 0:
+                self.status = 'short'
+            else:
+                self.status = 'long'
+            
+            self.record()
+
+        if self.status.upper() == 'SHORT':
+            c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "shortend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+            q = True
+        elif self.status.upper() == 'LONG':
+            if self.short > 0:
+                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "longend" ORDER BY `short_score`, `id` LIMIT 1', (self.id, ))
+                q = True
+            else:
+                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "longend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+                q = True
+        
+        if q:
+            data = c.fetchone()
+
+            print(self.id)
+            
+            if data:
+                return Skater(data)
+            else:
+                return None
+        
+        else:
+            return None
+
+    # Get all skaters in category
+    def getSkaters(self):
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT * FROM `skaters` WHERE `category` = ? ORDER BY `order`, `id`', (self.id, ))
+        data = c.fetchall()
+
+        skaters = []
+
+        for d in data:
+            skaters.append(Skater(data))
+
+        return skaters
+
+    # Count skaters
+    def getSkatersNum(self):
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT COUNT(*) AS `num` FROM `skaters` WHERE `category` = ?', (self.id, ))
+        data = c.fetchone()
+
+        return data['num']
+
+    # get results
+    def getResults(self, program_name):
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT * FROM `programs` WHERE `category` = ? AND `program_name` = ? ORDER BY `score` DESC, `components_score` DESC', (self.id, program_name))
+        data = c.fetchall()
+
+        programs = []
+
+        for d in data:
+            programs.append(Program(d))
+
+        return programs
 
     # Remove element from database
     def delete(self):
@@ -139,7 +243,8 @@ class Category:
             `short` REAL,
             `long` REAL,
             `short_components` REAL,
-            `long_components` REAL)''')
+            `long_components` REAL,
+            `status` TEXT)''')
 
         c.execute("PRAGMA table_info(`categories`)")
         fields = c.fetchall()
@@ -156,7 +261,8 @@ class Category:
             'short': 'REAL',
             'long': 'REAL',
             'short_components': 'REAL',
-            'long_components': 'REAL'
+            'long_components': 'REAL',
+            'status': 'TEXT'
         }
 
         for field, type in fields.items():

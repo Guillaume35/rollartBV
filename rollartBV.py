@@ -1,7 +1,10 @@
 from tkinter import *
+from tkinter import messagebox
 import elements_database
 import types_database
-import sessions_database
+from categories_database import *
+from sessions_database import *
+from skaters_database import *
 from functools import partial
 from motor.program import *
 from motor.session import *
@@ -9,7 +12,10 @@ from motor.category import *
 from motor.element import *
 from motor.element_type import *
 from motor.program_element import *
+from motor.skater import *
 import tools
+from penalty import *
+from component import *
 
 class RollartApp:
 
@@ -18,9 +24,9 @@ class RollartApp:
         self.window = Tk()
 
         # Customizing window
-        self.window.title("RollArt BV")
-        self.window.geometry("500x720")
-        self.window.minsize(480,360)
+        self.window.title("RollArt Free2Skate")
+        self.window.geometry("1600x900")
+        self.window.minsize(1280,720)
         self.window.config(background="#0a1526")
 
         # global variables
@@ -33,6 +39,21 @@ class RollartApp:
         self.elements_form = None
         self.score_frame = None
         self.program = None
+        self.boxes = []
+        self.btnsComponents = {
+            'skating_skills': None,
+            'transitions': None,
+            'choreography': None,
+            'performance': None
+        }
+        self.session = None
+        self.category = None
+
+        # check current session
+        currentSession = Session.getOpened()
+
+        if currentSession:
+            self.session = currentSession
 
 
     #start program
@@ -53,9 +74,92 @@ class RollartApp:
 
             program.record()
 
-            self.program = program
+            self.open_program(program)
+
+    
+    # Start a session
+    def start_session(self):
+
+        self.frame.pack_forget()
+        self.frame.destroy()
+
+        self.frame = Frame(self.window, bg="#0a1526")
+
+        frame = Frame(self.frame, bg="#0a1526")
+
+        label = Label(frame, text="Ready to start !", bg="#0a1526", fg="white", font=("sans-serif", 14), justify=LEFT, padx=10)
+        label.grid(row=0, column=1, sticky="nesw", ipadx=5, ipady=10)
+
+        btn = Button(frame, text="Home", font=("sans-serif", 12), command=self.home)
+        btn.grid(row=0, column=0, sticky="nesw", ipadx=5, ipady=10)
+
+        frame.pack(fill=X)
+
+        frame = Frame(self.frame, bg="#0a1526")
+
+        categories = self.session.getCategories()
+
+        i=0
+
+        for category in categories:
+            label = Label(frame, text=category.name+ ' ('+str(category.getSkatersNum())+')', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=10)
+            label.grid(row=i, column=0, sticky="nesw", ipadx=10, ipady=10)
+
+            actionStart = partial(self.resume_category, category)
+
+            if category.short > 0:
+
+                if str(category.status).upper() == 'UNSTARTED' or str(category.status).upper() == 'SHORT' or not category.status:
+                    btn = Button(frame, text="Start short", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+                else:
+
+                    action = partial(self.results, category, 'short')
+                    btn = Button(frame, text="Short results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+
+            if category.long > 0:
+                if str(category.status).upper() == 'LONG' or (category.short <= 0 and str(category.status).upper() != 'END'):
+                    btn = Button(frame, text="Start long", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                elif str(category.status).upper() == 'END':
+                    action = partial(self.results, category, 'long')
+                    btn = Button(frame, text="Long results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                else:
+                    btn = Button(frame, text="Wait long", font=("sans-serif", 12))
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+            i += 1
+
+        Grid.columnconfigure(frame, 0, weight=1)
+
+
+        frame.pack(fill=X, pady=10)
+
+        self.frame.pack(fill=X)
+
+    # Resume a category
+    def resume_category(self, category):
+        self.category = category
+
+        skater = category.getCurrentSkater()
+        
+        if skater:
+            skater.status = category.status
+            skater.record()
+            program = skater.getCurrentProgram()
 
             self.open_program(program)
+
+        else:
+            if category.status.upper() == 'SHORT':
+                category.status = 'long'
+            else:
+                category.status = 'end'
+
+            category.record()
+
+            self.start_session()
 
 
     # Display home
@@ -75,28 +179,27 @@ class RollartApp:
         # create elements
 
         # title
-        label_title = Label(title_frame, text="RollArt BV", font=("sans-serif", 24), bg="#0a1526", fg="white")
+        label_title = Label(title_frame, text="RollArt Free2Skate", font=("sans-serif", 24), bg="#0a1526", fg="white")
         label_title.pack()
 
-        label_subtitle = Label(title_frame, text="Calculate your program base value in real time !", font=("sans-serif", 14), bg="#0a1526", fg="white")
+        label_subtitle = Label(title_frame, text="The free and open source Roll Art system", font=("sans-serif", 14), bg="#0a1526", fg="white")
         label_subtitle.pack()
 
-        # check current session
-        currentSession = Session.getOpened()
+        sessionApp = SessionApp(self)
 
         # current session exists
-        if currentSession:
+        if self.session:
 
-            label_session = Label(session_frame, text=currentSession.name, font=("sans-serif", 12), bg="#0a1526", fg="white")
+            label_session = Label(session_frame, text=self.session.name, font=("sans-serif", 12, 'bold'), bg="#0a1526", fg="white")
             label_session.pack(pady=10)
 
-            sessionAction = partial(sessions_database.close_session, currentSession, self)
+            sessionAction = partial(sessionApp.close_session, self.session)
 
             sessions_db_btn = Button(session_frame, text="Close session", font=("sans-serif", 12), bg="#cf362b", fg="white", command=sessionAction)
             sessions_db_btn.pack(pady=5, fill=X)
 
         else:
-            sessionAction = partial(sessions_database.open_window, self)
+            sessionAction = partial(sessionApp.open_window)
 
             # Session menu
             sessions_db_btn = Button(session_frame, text="Open session", font=("sans-serif", 12), bg="#dfe7e8", command=sessionAction)
@@ -107,7 +210,7 @@ class RollartApp:
         self.error_label = Label(error_frame, text="", font=("sans-serif", 10), bg="red", fg="white", height=0)
         error_frame.pack()
 
-        if not currentSession:
+        if not self.session:
             # Skater informations
             form_frame = Frame(menu_frame, bg="#0a1526")
             skater_label = Label(form_frame, text="Skater", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
@@ -122,24 +225,29 @@ class RollartApp:
 
             form_frame.pack(pady=5, expand=YES)
 
-        else:
-            # get next skater
-            label_skater = Label(menu_frame, text="> Next skater ???", font=("sans-serif", 14, "bold"), bg="#0a1526", fg="white")
-            label_skater.pack(pady=5)
+            # Buttons
+            start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=self.start)
+            start_btn.pack(pady=10, fill=X)
 
-        # Buttons
-        start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=self.start)
-        start_btn.pack(pady=10, fill=X)
+        else:
+
+            # Buttons
+            start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=self.start_session)
+            start_btn.pack(pady=10, fill=X)
+
+        
 
         # Managing skaters list
-        if currentSession:
+        if self.session:
             label = Label(menu_frame, text="Current session managment", font=("sans-serif", 12), bg="#0a1526", fg="white")
             label.pack(pady=10)
 
-            btn = Button(menu_frame, text="Categories", font=("sans-serif", 12), bg="#dfe7e8")
+            categoryApp = CategoryApp(self)
+
+            btn = Button(menu_frame, text="Categories", font=("sans-serif", 12), bg="#dfe7e8", command=categoryApp.open_window)
             btn.pack(pady=5, fill=X)
 
-            btn = Button(menu_frame, text="Skaters", font=("sans-serif", 12), bg="#dfe7e8")
+            btn = Button(menu_frame, text="Skaters", font=("sans-serif", 12), bg="#dfe7e8", command=self.skater_database)
             btn.pack(pady=5, fill=X)
 
 
@@ -161,6 +269,8 @@ class RollartApp:
     # program window
     def open_program(self, program):
 
+        self.program = program
+
         if self.frame:
             self.frame.destroy()
 
@@ -176,22 +286,23 @@ class RollartApp:
 
         title_frame = Frame(self.frame, bg="#bd3800")
 
-        Grid.columnconfigure(title_frame, 0, weight=1)
-        Grid.rowconfigure(title_frame, 0, weight=1)
+        btn = Button(title_frame, text="Home", font=("sans-serif", 12), command=self.home)
+        btn.grid(row=0, column=0, sticky="nsew")
 
         # title
         label_title = Label(title_frame, text="Record program", font=("sans-serif", 18), bg="#bd3800", fg="white", padx=10)
-        label_title.grid(row=0, column=0, sticky="nsw")
+        label_title.grid(row=0, column=1, sticky="nsw")
 
+        label_skater = Label(title_frame, text=self.program.skater+' ('+program.program_name+')', font=("sans-serif", 10), bg="#bd3800", fg="white", padx=10)
+        label_skater.grid(row=0, column=2, sticky="nes")
+
+        Grid.rowconfigure(title_frame, 0, weight=1)
         Grid.columnconfigure(title_frame, 1, weight=1)
-
-        label_skater = Label(title_frame, text=program.skater+' ('+program.program_name+')', font=("sans-serif", 10), bg="#bd3800", fg="white", padx=10)
-        label_skater.grid(row=0, column=1, sticky="nes")
 
         # add to window
         title_frame.pack(ipady=5, fill=X)
 
-        boxes = program.getBoxes()
+        boxes = self.program.getBoxes()
 
         createEmpty = True
 
@@ -201,23 +312,86 @@ class RollartApp:
 
             if not len(elements):
                 createEmpty = False
+
+        if self.program.status.upper() != 'START':
+            createEmpty = False
         
         if createEmpty:
             boxes.append(ProgramBox({
-                'program': program.id
+                'program': self.program.id
             }))
 
         i = 0
+
+        self.boxes = []
 
         for box in boxes:
 
             comp = BoxElement(box, self.boxes_frame, self)
             comp.wrapper()
 
+            self.boxes.append(comp)
+
             i += 1
 
         #self.program_element_form()
         self.boxes_frame.pack(fill=X)
+
+        toolbar = Frame(self.frame, bg="#0a1526")
+
+        btn = Button(toolbar, text=str(self.program.fall)+" Fall", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12)
+        action = partial(self.program_fall, btn)
+        btn.configure(command=action)
+        btn.grid(row=0, column=0, pady=10, sticky="nsew")
+
+        btn = Button(toolbar, text="Penalty", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12, command=self.program_penalty)
+        btn.grid(row=0, column=1, pady=10, sticky="nsew")
+
+        if self.program.status.upper() == 'START':
+            label = 'STOP'
+            color = 'red'
+        else:
+            label = 'START'
+            color = 'green'
+
+
+        btn = Button(toolbar, text=label, font=("sans-serif", 14, "bold"), bg=color, fg="white", pady=12)
+        action = partial(self.toggle_program_status, btn)
+        btn.configure(command=action)
+        btn.grid(row=0, column=2, pady=10, sticky="nsew")
+
+        if self.program.session:
+
+            action = partial(self.confirm_skater)
+            btn = Button(toolbar, text="Next skater", font=("sans-serif", 14, "bold"), bg="green", fg="white", pady=12, command=action)
+            btn.grid(row=0, column=3, pady=10, sticky="nsew")
+
+            btn = Button(toolbar, text="Skip", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12)
+            btn.grid(row=0, column=4, pady=10, sticky="nsew")
+
+        Grid.columnconfigure(toolbar, 2, weight=1)
+
+        toolbar.pack(fill=X, pady=10)
+
+        components = ['skating_skills', 'transitions', 'choreography', 'performance']
+
+        combar = Frame(self.frame, bg="#0a1526")
+
+        i = 0
+
+        for component in components:
+            action = partial(self.program_component,component)
+
+            btn = Button(combar, text=component, font=("sans-serif", 14), pady=10, command=action)
+            btn.grid(row=0, column=i, pady=10, sticky="nsew")
+            self.btnsComponents[component] = btn
+            self.program_component_value(component)
+
+            Grid.columnconfigure(combar, i, weight=1)
+
+            i+=1
+
+        combar.pack(fill=X)
 
         self.program_score()
 
@@ -258,6 +432,194 @@ class RollartApp:
         Grid.columnconfigure(self.score_frame, 1, minsize=300)
 
         self.score_frame.pack(fill=X, pady=10)
+
+    # Stop program
+    def toggle_program_status(self, btn):
+        if self.program.status.upper() == 'START':
+            self.program.status = 'stop'
+            label = 'START'
+            color = 'green'
+
+            #check last box and delete
+            lastCreated = self.boxes[-1]
+            if lastCreated:
+                elements = lastCreated.box.getElements()
+
+                if not len(elements):
+                    lastCreated.box.delete()
+                    lastCreated.frame.destroy()
+
+                else:
+                    if lastCreated.mode != 'display':
+                        lastCreated.display()
+
+        else:
+            self.program.status = 'start'
+            label = 'STOP'
+            color = 'red'
+
+            comp = BoxElement(ProgramBox({
+                'program': self.program.id
+            }), self.boxes_frame, self)
+            comp.wrapper()
+
+            self.boxes.append(comp)
+        
+        self.program.record()
+
+        btn.configure(bg=color, text=label)
+
+    # add a fall
+    def program_fall(self, btn):
+        self.program.fall += 1
+        self.program.penalization -= 1
+        self.program.record()
+
+        self.program_score()
+
+        btn.configure(text=str(self.program.fall)+" Fall")
+
+    # Open penalty dialog box
+    def program_penalty(self):
+        penaltyApp = PenaltyApp(self)
+        penaltyApp.open_window()
+
+    # Open component dialog
+    def program_component(self, component):
+        componentApp = ComponentApp(component, self)
+        componentApp.open_window()
+
+    # Check program component value
+    def program_component_value(self, component):
+
+        programData = self.program.getAll()
+        val = programData[component]
+        btn = self.btnsComponents[component]
+
+        if val > 0 and val <= 10:
+            btn.configure(fg="black", text=component+' '+str(val))
+        else:
+            btn.configure(fg="red", text=component+' '+str(val))
+
+    # Open skaters category window
+    def skater_database(self):
+
+        # Create main window
+        window = Tk()
+
+        # Customizing window
+        window.title("Skaters - RollArt BV")
+        window.geometry("1280x720")
+        window.minsize(1280,720)
+        window.config(background="#0a1526")
+
+        frame = Frame(window, bg="")
+
+        label = Label(frame, text="Skaters", font=("sans-serif", 18), fg="white", bg="#0a1526")
+        label.pack(fill=X, pady=15)
+
+        categories = self.session.getCategories()
+
+        for category in categories:
+
+            skaterApp = SkaterApp(self, category)
+
+            btn = Button(frame, text=category.name, font=("sans-serif", 12), command=skaterApp.open_window, pady=8)
+            btn.pack(fill=X, pady=8)
+
+        frame.pack(fill=X)
+
+        window.mainloop()
+
+    def confirm_skater(self):
+        skater = Skater(self.program.skater_id)
+
+        if self.program.program_name.upper() == 'SHORT':
+            status = 'shortend'
+            skater.short_score = self.program.score
+        else:
+            status = 'longend'
+            skater.long_score = self.program.score
+
+        skater.status = status
+        skater.calculate()
+        skater.record()
+
+        self.resume_category(self.category)
+
+    def results(self, category, programType):
+        # Create main window
+        window = Tk()
+
+        # Customizing window
+        window.title("Results - "+category.name+" - "+programType+" - RollArt BV")
+        window.geometry("1280x720")
+        window.minsize(1280,720)
+        window.config(background="#0a1526")
+
+        frame = Frame(window, bg="")
+
+        label = Label(frame, text="Results - "+category.name+" - "+programType, font=("sans-serif", 18), fg="white", bg="#0a1526")
+        label.pack(fill=X, pady=15)
+
+        frame.pack(fill=X)
+
+        frame = Frame(window, bg="")
+
+        i = 0
+
+        label = Label(frame, text="Rank", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        label.grid(row=i, column=0, sticky="nsew")
+
+        label = Label(frame, text="Skater", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        label.grid(row=i, column=1, sticky="nsew")
+
+        label = Label(frame, text="Tech. score", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT, anchor="w")
+        label.grid(row=i, column=2, sticky="nsew")
+
+        label = Label(frame, text="Components", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        label.grid(row=i, column=3, sticky="nsew")
+
+        label = Label(frame, text="Deduc.", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        label.grid(row=i, column=4, sticky="nsew")
+
+        label = Label(frame, text="Total", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        label.grid(row=i, column=5, sticky="nsew")
+
+        programs = category.getResults(programType)
+
+        for program in programs:
+            label = Label(frame, text=str(i+1), font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i+1, column=0, sticky="nsew")
+
+            label = Label(frame, text=program.skater, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i+1, column=1, sticky="nsew")
+
+            label = Label(frame, text=program.technical_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT, anchor="w")
+            label.grid(row=i+1, column=2, sticky="nsew")
+
+            label = Label(frame, text=program.components_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i+1, column=3, sticky="nsew")
+
+            label = Label(frame, text=program.penalization, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i+1, column=4, sticky="nsew")
+
+            label = Label(frame, text=program.score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i+1, column=5, sticky="nsew")
+
+            i +=1
+
+        Grid.columnconfigure(frame, 0, minsize=100)
+        Grid.columnconfigure(frame, 1, weight=1)
+        Grid.columnconfigure(frame, 2, minsize=250)
+        Grid.columnconfigure(frame, 3, minsize=250)
+        Grid.columnconfigure(frame, 4, minsize=120)
+        Grid.columnconfigure(frame, 5, minsize=250)
+
+        frame.pack(fill=X)
+            
+
+        window.mainloop()
 
             
 # Add a box
@@ -397,7 +759,12 @@ class BoxElement():
                 btn.configure(bg='yellow', fg='red')
             btn.grid(row=i, column=1, sticky="nsew")
 
-            btn = Button(element_frame, text="T", font=("sans-serif", 11))
+            action = partial(self.time, element)
+
+            btn = Button(element_frame, text="T", font=("sans-serif", 11), command=action)
+
+            if element.time:
+                btn.configure(bg='yellow', fg='red')
             btn.grid(row=i, column=2, sticky="nsew")
 
             base_code = ''
@@ -503,6 +870,8 @@ class BoxElement():
                 }), self.root, self.parent)
                 comp.wrapper()
 
+                self.parent.boxes.append(comp)
+
                 self.lastElement = False
 
     def star(self, element):
@@ -510,6 +879,18 @@ class BoxElement():
             element.star = 0
         else:
             element.star = 1
+        
+        element.calculate()
+        element.record()
+        
+        self.display()
+        self.parent.program_score()
+
+    def time(self, element):
+        if element.time:
+            element.time = 0
+        else:
+            element.time = 1
         
         element.calculate()
         element.record()
@@ -1088,6 +1469,7 @@ if __name__ == "__main__":
     ProgramElement.database_integrity()
     ProgramBox.database_integrity()
     Session.database_integrity()
+    Skater.database_integrity()
 
     # Then load app
     rollart = RollartApp()

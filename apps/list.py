@@ -3,7 +3,7 @@ from functools import partial
 
 class ListApp:
 
-    def __init__(self, window, className, title="List", data=[], labels=[], actions=[]):
+    def __init__(self, window, className, title="List", data=[], labels=[], actions=[], default={}):
 
         self.frame = Frame(window, bg="#0a1526")
         self.title_frame = Frame(self.frame, bg="#0a1526")
@@ -17,6 +17,7 @@ class ListApp:
         self.default_font = 'monospace'
         self.default_width = 7
         self.className = className
+        self.default = default
 
     def add_row(self, data):
 
@@ -70,6 +71,10 @@ class ListApp:
             if (row == 0):
                 self.entries[row][i].delete(0, END)
 
+        for key, val in self.default.items():
+            if not key in data:
+                data[key] = val
+
         ob = self.className(data)
         ob.record()
 
@@ -101,10 +106,14 @@ class ListApp:
 
             Grid.columnconfigure(self.table_frame, i, weight=1)
 
-            self.header.append(Label(self.table_frame, text=self.labels[i]['label'], font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white"))
-            self.header[i].grid(row=0, column=i)
+            self.header.append(Label(self.table_frame, text=self.labels[i]['label'], font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white",  borderwidth=1, relief="groove"))
+            self.header[i].grid(row=0, column=i, sticky="nesw")
 
             self.entries[0].append(Entry(self.table_frame, width=width, font=(font, 10), borderwidth=1, relief='flat'))
+
+            if 'value' in self.labels[i].keys():
+                self.entries[0][i].insert(END, self.labels[i]['value'])
+            
             self.entries[0][i].grid(row=1, column=i, sticky="nesw")
 
 

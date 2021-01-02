@@ -4,60 +4,66 @@ from motor.session import *
 from apps.list import *
 import tools
 
-def open_session(session, root):
-    sessionOb = Session(session['id'])
-    sessionOb.open()
-    root.home()
+class SessionApp:
 
-def close_session(sessionOb, root):
-    sessionOb.close()
-    root.home()
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = None
 
-def open_window(root):
+    def open_session(self, session):
+        sessionOb = Session(session['id'])
+        sessionOb.open()
+        self.parent.session = sessionOb
+        self.parent.home()
+        self.window.destroy()
+    
+    def close_session(self, sessionOb):
+        sessionOb.close()
+        self.parent.session = None
+        self.parent.home()
 
-    labels = [
-        {
-            'var': 'name',
-            'label': 'Name'
-        },
-        {
-            'var': 'date',
-            'label': 'Date'
-        }
-    ]
+    def open_window(self):
 
-    actions = [
-        {
-            'label': 'Open',
-            'action': open_session,
-            'params': root
-        }
-    ]
+        labels = [
+            {
+                'var': 'name',
+                'label': 'Name',
+                'font': 'sans-serif'
+            },
+            {
+                'var': 'date',
+                'label': 'Date'
+            }
+        ]
 
-    # Create main window
-    window = Tk()
+        actions = [
+            {
+                'label': 'Open',
+                'action': self.open_session
+            }
+        ]
 
-    # Customizing window
-    window.title("Sessions database - RollArt BV")
-    window.geometry("500x720")
-    window.minsize(480,360)
-    window.config(background="#0a1526")
+        # Create main window
+        self.window = Tk()
 
-    home_path = str(Path.home())
-    db_path = home_path + '/.rollartBV/structure.db'
+        # Customizing self.window
+        self.window.title("Sessions database - RollArt BV")
+        self.window.geometry("500x720")
+        self.window.minsize(480,360)
+        self.window.config(background="#0a1526")
 
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    c.row_factory = tools.dict_factory
-    c.execute("SELECT * FROM `sessions` ORDER BY `id` DESC")
+        home_path = str(Path.home())
+        db_path = home_path + '/.rollartBV/structure.db'
 
-    data = c.fetchall()
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute("SELECT * FROM `sessions` ORDER BY `id` DESC")
 
-    list = ListApp(window=window, title="Sessions database", data=data, labels=labels, className=Session, actions=actions)
-    list.display()
+        data = c.fetchall()
 
-    # display window
-    window.mainloop()
+        list = ListApp(window=self.window, title="Sessions database", data=data, labels=labels, className=Session, actions=actions)
+        list.display()
 
-if __name__ == '__main__':
-    open_window()
+        # display window
+        self.window.mainloop()

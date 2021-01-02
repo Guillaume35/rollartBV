@@ -55,7 +55,8 @@ class ProgramElement:
             'qoe_value': 0,
             'technical_value': 1.7,
             'star': 0,
-            'stared_value': 1.7
+            'stared_value': 1.7,
+            'time': 0
         }
 
         for key in values:
@@ -78,6 +79,7 @@ class ProgramElement:
         self.technical_value = values['technical_value']
         self.star = values['star']
         self.stared_value = values['stared_value']
+        self.time = values['time']
 
 
     # record data to database
@@ -103,9 +105,10 @@ class ProgramElement:
                     `qoe_value`,
                     `technical_value`,
                     `star`,
-                    `stared_value`
+                    `stared_value`,
+                    `time`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.program, 
                     self.box,
@@ -120,7 +123,8 @@ class ProgramElement:
                     self.qoe_value, 
                     self.technical_value,
                     self.star,
-                    self.stared_value
+                    self.stared_value,
+                    self.time
                 ))
             
             # get last id
@@ -144,7 +148,8 @@ class ProgramElement:
                             `qoe_value` = ?,
                             `technical_value` = ?,
                             `star` = ?,
-                            `stared_value` = ?
+                            `stared_value` = ?,
+                            `time` = ?
                         WHERE `id` = ?''', (
                             self.program,
                             self.box, 
@@ -160,6 +165,7 @@ class ProgramElement:
                             self.technical_value,
                             self.star,
                             self.stared_value,
+                            self.time,
                             self.id
                         ))
 
@@ -182,7 +188,8 @@ class ProgramElement:
             'qoe_value': self.qoe_value,
             'technical_value': self.technical_value,
             'star': self.star,
-            'stared_value': self.stared_value
+            'stared_value': self.stared_value,
+            'time': self.time
         }
 
         return data
@@ -352,6 +359,10 @@ class ProgramElement:
         else:
             self.stared_value = self.technical_value
 
+            if self.time:
+                self.stared_value += self.base_value * 0.1
+        self.stared_value = round(self.stared_value, 2)
+
     
     # Read from element table
     def read(self):
@@ -438,7 +449,8 @@ class ProgramElement:
             `qoe_value` REAL,
             `technical_value` REAL,
             `star` INTEGER,
-            `stared_value` REAL
+            `stared_value` REAL,
+            `time` INTEGER
             )''')
 
         c.execute("PRAGMA table_info(`program_elements`)")
@@ -463,7 +475,8 @@ class ProgramElement:
             'qoe_value': 'REAL',
             'technical_value': 'REAL',
             'star': 'INTEGER',
-            'stared_value': 'REAL'
+            'stared_value': 'REAL',
+            'time': 'INTEGER'
         }
 
         for field, type in fields.items():
