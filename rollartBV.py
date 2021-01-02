@@ -127,7 +127,8 @@ class RollartApp:
                     btn = Button(frame, text="Long results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
                     btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
                 else:
-                    btn = Button(frame, text="Wait long", font=("sans-serif", 12))
+                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish short program first")
+                    btn = Button(frame, text="Wait long", font=("sans-serif", 12), command=actionWait)
                     btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
             i += 1
 
@@ -532,20 +533,30 @@ class RollartApp:
         window.mainloop()
 
     def confirm_skater(self):
-        skater = Skater(self.program.skater_id)
 
-        if self.program.program_name.upper() == 'SHORT':
-            status = 'shortend'
-            skater.short_score = self.program.score
+        if self.program.status.upper() == 'STOP':
+
+            if self.program.skating_skills > 0 and self.program.transitions > 0 and self.program.choreography > 0 and self.program.performance > 0:
+                skater = Skater(self.program.skater_id)
+
+                if self.program.program_name.upper() == 'SHORT':
+                    status = 'shortend'
+                    skater.short_score = self.program.score
+                else:
+                    status = 'longend'
+                    skater.long_score = self.program.score
+
+                skater.status = status
+                skater.calculate()
+                skater.record()
+
+                self.resume_category(self.category)
+
+            else:
+                messagebox.showwarning(title="Can't confirm", message="Asign components values before confirm")
+        
         else:
-            status = 'longend'
-            skater.long_score = self.program.score
-
-        skater.status = status
-        skater.calculate()
-        skater.record()
-
-        self.resume_category(self.category)
+            messagebox.showwarning(title="Can't confirm", message="Stop program before confirm")
 
     def results(self, category, programType):
         # Create main window
@@ -583,12 +594,23 @@ class RollartApp:
         label = Label(frame, text="Deduc.", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
         label.grid(row=i, column=4, sticky="nsew")
 
-        label = Label(frame, text="Total", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+        if category.short > 0 and category.long > 0:
+            text = 'Program'
+        else:
+            text = 'Total'
+
+        label = Label(frame, text=text, font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
         label.grid(row=i, column=5, sticky="nsew")
+
+        if category.short > 0 and programType.upper() == 'LONG':
+            label = Label(frame, text="Total", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i, column=6, sticky="nsew")
 
         programs = category.getResults(programType)
 
         for program in programs:
+            program.calculate()
+            program.record()
             label = Label(frame, text=str(i+1), font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=0, sticky="nsew")
 
@@ -607,6 +629,10 @@ class RollartApp:
             label = Label(frame, text=program.score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=5, sticky="nsew")
 
+            if category.short > 0 and programType.upper() == 'LONG':
+                label = Label(frame, text=program.total_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+                label.grid(row=i+1, column=6, sticky="nsew")
+
             i +=1
 
         Grid.columnconfigure(frame, 0, minsize=100)
@@ -615,6 +641,9 @@ class RollartApp:
         Grid.columnconfigure(frame, 3, minsize=250)
         Grid.columnconfigure(frame, 4, minsize=120)
         Grid.columnconfigure(frame, 5, minsize=250)
+
+        if category.short > 0 and programType.upper() == 'LONG':
+            Grid.columnconfigure(frame, 6, minsize=250)
 
         frame.pack(fill=X)
             

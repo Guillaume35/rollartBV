@@ -60,6 +60,7 @@ class Program:
             'program_value': 0.0,
             'penalization': 0.0,
             'score': 0.0,
+            'total_score': 0.0,
             'category': 0,
             'session': 0,
             'status': 'start',
@@ -88,6 +89,7 @@ class Program:
         self.program_value = values['program_value']
         self.penalization = values['penalization']
         self.score = values['score']
+        self.total_score = values['total_score']
         self.category = values['category']
         self.session = values['session']
         self.status = values['status']
@@ -147,6 +149,19 @@ class Program:
 
         if self.score < 0:
             self.score = 0
+        
+        self.total_score = self.score
+
+        # Add short program score to total
+        if self.program_name.upper() == 'LONG' and self.skater_id:
+            c.row_factory = tools.dict_factory
+            c.execute("SELECT * FROM `programs` WHERE `program_name` = 'short' AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1", 
+                (self.skater_id, self.category, self.session))
+
+            data = c.fetchone()
+            if data:
+                self.total_score += data['score']
+                self.total_score = round(self.total_score, 2)
 
     # record data to database
     def record(self):
@@ -174,12 +189,13 @@ class Program:
                     `components_score`,
                     `program_value`,
                     `score`,
+                    `total_score`,
                     `category`,
                     `session`,
                     `status`,
                     `fall`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.skater, 
                     self.skater_id, 
@@ -197,6 +213,7 @@ class Program:
                     self.components_score,
                     self.program_value,
                     self.score,
+                    self.total_score,
                     self.category,
                     self.session,
                     self.status,
@@ -227,6 +244,7 @@ class Program:
                             `components_score` = ?,
                             `program_value` = ?,
                             `score` = ?,
+                            `total_score` = ?,
                             `category` = ?,
                             `session` = ?,
                             `status` = ?,
@@ -248,6 +266,7 @@ class Program:
                             self.components_score,
                             self.program_value,
                             self.score,
+                            self.total_score,
                             self.category,
                             self.session,
                             self.status,
@@ -277,6 +296,7 @@ class Program:
             'program_value': self.program_value,
             'penalization': self.penalization,
             'score': self.score,
+            'total_score': self.total_score,
             'category': self.category,
             'session': self.session,
             'status': self.status,
@@ -321,6 +341,7 @@ class Program:
             `program_value` REAL,
             `penalization` REAL,
             `score` REAL,
+            `total_score` REAL,
             `category` INTEGER,
             `session` INTEGER,
             `status` TEXT,
@@ -351,6 +372,7 @@ class Program:
             'program_value': 'REAL',
             'penalization': 'REAL',
             'score': 'REAL',
+            'total_score': 'REAL',
             'category': 'INTEGER',
             'session': 'INTEGER',
             'status': 'TEXT',

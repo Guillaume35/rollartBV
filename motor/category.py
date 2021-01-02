@@ -207,7 +207,7 @@ class Category:
     def getResults(self, program_name):
         c = self.conn.cursor()
         c.row_factory = tools.dict_factory
-        c.execute('SELECT * FROM `programs` WHERE `category` = ? AND `program_name` = ? ORDER BY `score` DESC, `components_score` DESC', (self.id, program_name))
+        c.execute('SELECT * FROM `programs` WHERE `category` = ? AND `program_name` = ? ORDER BY `total_score` DESC, `components_score` DESC', (self.id, program_name))
         data = c.fetchall()
 
         programs = []
