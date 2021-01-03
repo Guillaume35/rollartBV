@@ -69,6 +69,12 @@ class Session:
         if not exists:
             c.execute('INSERT INTO `sessions` (`name`, `date`) VALUES (?,?)', (self.name, self.date))
 
+            # get last id
+            c.execute('SELECT `id` FROM `sessions` ORDER BY `id` DESC LIMIT 1')
+            res = c.fetchone()
+
+            self.id = res[0]
+
         else:
             c.execute('UPDATE `sessions` SET `name` = ?, `date` = ? WHERE `id` = ?', (self.name, self.date, self.id))
 

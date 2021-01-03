@@ -47,6 +47,7 @@ class Skater:
             'order': 0,
             'session': 0,
             'category': 0,
+            'initial_score': 0.0,
             'short_score': 0.0,
             'long_score': 0.0,
             'total_score': 0.0,
@@ -64,6 +65,7 @@ class Skater:
         self.order = values['order']
         self.session = values['session']
         self.category = values['category']
+        self.initial_score = values['initial_score']
         self.short_score = values['short_score']
         self.long_score = values['long_score']
         self.total_score = values['total_score']
@@ -85,18 +87,20 @@ class Skater:
                     `order`, 
                     `session`,
                     `category`,
+                    `initial_score`,
                     `short_score`,
                     `long_score`,
                     `total_score`,
                     `team`,
                     `status`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.name, 
                     self.order, 
                     self.session, 
                     self.category, 
+                    self.initial_score,
                     self.short_score, 
                     self.long_score, 
                     self.total_score, 
@@ -104,12 +108,19 @@ class Skater:
                     self.status
                 ))
 
+            # get last id
+            c.execute('SELECT `id` FROM `skaters` ORDER BY `id` DESC LIMIT 1')
+            res = c.fetchone()
+
+            self.id = res[0]
+
         else:
             c.execute('''UPDATE `skaters` SET 
                             `name` = ?, 
                             `order` = ?,
                             `session` = ?,
                             `category` = ?,
+                            `initial_score` = ?,
                             `short_score` = ?,
                             `long_score` = ?,
                             `total_score` = ?,
@@ -121,6 +132,7 @@ class Skater:
                         self.order, 
                         self.session, 
                         self.category,
+                        self.initial_score,
                         self.short_score, 
                         self.long_score, 
                         self.total_score, 
@@ -139,6 +151,7 @@ class Skater:
             'order': self.order,
             'session': self.session,
             'category': self.category,
+            'initial_score': self.initial_score,
             'short_score': self.short_score,
             'long_score': self.long_score,
             'total_score': self.total_score,
@@ -184,7 +197,41 @@ class Skater:
             return None
 
     def calculate(self):
-        self.total_score = round(self.short_score + self.long_score, 2)
+        initial_score = 0
+        if self.initial_score:
+            initial_score = float(self.initial_score)
+
+        self.total_score = round(self.short_score + self.long_score + initial_score, 2)
+
+    def getTeamScore(self):
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT SUM(`total_score`) AS `sum` FROM `skaters` WHERE `session` = ? AND `team` = ?', (self.session, self.team))
+        data = c.fetchone()
+
+        if data:
+            score = data['sum']
+        else:
+            score = 0
+
+        return score
+
+    # get all teams
+    @staticmethod
+    def getTeams(session):
+        conn = tools.getDb()
+        c = conn.cursor()
+
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT `team`, SUM(`total_score`) AS `total_score` FROM `skaters` WHERE `session` = ? GROUP BY `team`', (session,))
+        data = c.fetchall()
+
+        if data:
+            teams = data
+        else:
+            teams = None
+
+        return teams
 
     # Create database structure
     @staticmethod
@@ -204,6 +251,7 @@ class Skater:
             `order` INTEGER,
             `session` INTEGER,
             `category` INTEGER,
+            `initial_score` REAL,
             `short_score` REAL,
             `long_score` REAL,
             `total_score` REAL,
@@ -223,6 +271,7 @@ class Skater:
             'order': 'INTEGER',
             'session': 'INTEGER',
             'category': 'INTEGER',
+            'initial_score' : 'REAL',
             'short_score': 'REAL',
             'long_score': 'REAL',
             'total_score': 'REAL',

@@ -155,13 +155,35 @@ class Program:
         # Add short program score to total
         if self.program_name.upper() == 'LONG' and self.skater_id:
             c.row_factory = tools.dict_factory
+
+            c.execute("SELECT `initial_score` FROM `skaters` WHERE `id` = ?", (self.skater_id, ))
+            data = c.fetchone()
+
+            if data['initial_score']:
+                self.total_score += float(data['initial_score'])
+
             c.execute("SELECT * FROM `programs` WHERE `program_name` = 'short' AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1", 
                 (self.skater_id, self.category, self.session))
 
             data = c.fetchone()
+
             if data:
                 self.total_score += data['score']
-                self.total_score = round(self.total_score, 2)
+            
+            self.total_score = round(self.total_score, 2)
+
+    def getRank(self):
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute("SELECT COUNT(*) AS `num` FROM `programs` WHERE `total_score` > ? AND `category` = ? AND `program_name` = ? AND `id` != ?", (self.total_score, self.category, self.program_name, self.id))
+        data = c.fetchone()
+
+        if data:
+            rank = data['num'] + 1
+        else:
+            rank = 1
+        
+        return rank
 
     # record data to database
     def record(self):

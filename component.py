@@ -16,6 +16,7 @@ class ComponentApp:
         self.btnsDeci = []
         self.unit = 0
         self.deci_frame = None
+        self.closed = False
 
         comData = self.parent.program.getAll()
         part = str(comData[self.component]).split('.')
@@ -29,15 +30,21 @@ class ComponentApp:
             self.parent.program.penalization = val
             self.parent.program.record()
             self.parent.program_score()
-            self.window.destroy()
+            self.close_window()
 
         else:
             messagebox.showwarning(title="Penalty alert", message="Only <= 0 value accepted", parent=self.window)
+
+    def close_window(self):
+        self.closed = True
+        self.window.destroy()
 
     def open_window(self):
 
         # Create main window
         self.window = Tk()
+
+        self.window.protocol("WM_DELETE_WINDOW", self.close_window)
 
         # Customizing window
         self.window.title("Component "+self.component+" - RollArt BV")
@@ -119,7 +126,7 @@ class ComponentApp:
             self.parent.program.record()
             self.parent.program_component_value(self.component)
             self.parent.program_score()
-            self.window.destroy()
+            self.close_window()
 
     def deciForm(self):
 

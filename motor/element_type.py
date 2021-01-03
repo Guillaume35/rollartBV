@@ -56,6 +56,12 @@ class ElementType:
         if not exists:
             c.execute('INSERT INTO `elements_types` VALUES (?,?)', (self.code, self.name))
 
+            # get last id
+            c.execute('SELECT `id` FROM `elements_types` ORDER BY `id` DESC LIMIT 1')
+            res = c.fetchone()
+
+            self.id = res[0]
+
         else:
             c.execute('UPDATE `elements_types` SET `name` = ? WHERE `code` = ?', (self.name, self.code))
 

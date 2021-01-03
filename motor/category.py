@@ -100,6 +100,11 @@ class Category:
                     self.long_components,
                     self.status
                 ))
+            # get last id
+            c.execute('SELECT `id` FROM `categories` ORDER BY `id` DESC LIMIT 1')
+            res = c.fetchone()
+
+            self.id = res[0]
 
         else:
             c.execute('''UPDATE `categories` SET 

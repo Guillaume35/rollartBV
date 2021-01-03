@@ -16,6 +16,8 @@ from motor.skater import *
 import tools
 from penalty import *
 from component import *
+import urllib.request
+import urllib.parse
 
 class RollartApp:
 
@@ -48,6 +50,7 @@ class RollartApp:
         }
         self.session = None
         self.category = None
+        self.componentsApps = []
 
         # check current session
         currentSession = Session.getOpened()
@@ -85,15 +88,49 @@ class RollartApp:
 
         self.frame = Frame(self.window, bg="#0a1526")
 
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(self.frame, bg="#bd3800")
 
-        label = Label(frame, text="Ready to start !", bg="#0a1526", fg="white", font=("sans-serif", 14), justify=LEFT, padx=10)
+        label = Label(frame, text="Ready to start !", bg="#bd3800", fg="white", font=("sans-serif", 14), justify=LEFT, padx=10)
         label.grid(row=0, column=1, sticky="nesw", ipadx=5, ipady=10)
 
         btn = Button(frame, text="Home", font=("sans-serif", 12), command=self.home)
         btn.grid(row=0, column=0, sticky="nesw", ipadx=5, ipady=10)
 
         frame.pack(fill=X)
+
+        teams = Skater.getTeams(self.session.id)
+
+        if teams:
+
+            if len(teams):
+
+                frame = Frame(self.frame, bg="#0a1526")
+
+                label = Label(frame, text="Teams score", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
+                label.pack(fill=X)
+
+                frame.pack(fill=X, pady=15)
+
+                frame = Frame(self.frame, bg="#0a1526")
+
+                i=0
+
+                for team in teams:
+
+                    label = Label(frame, text=team['team'], bg="#0a1526", fg="white", font=("sans-serif", 12), justify=LEFT, padx=10, borderwidth=1, relief="groove", anchor="w")
+                    label.grid(row=0, column=i, sticky="nesw", ipadx=5, ipady=10)
+
+                    label = Label(frame, text=round(team['total_score'],2), bg="#0a1526", fg="white", font=("sans-serif", 12), justify=LEFT, padx=10, borderwidth=1, relief="groove", anchor="w")
+                    label.grid(row=1, column=i, sticky="nesw", ipadx=5, ipady=10)
+
+                    Grid.columnconfigure(frame, i, weight=1)
+
+                    i +=1
+
+                frame.pack(fill=X, pady=15)
+
+        label = Label(self.frame, text="Categories", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
+        label.pack(fill=X, pady=15)
 
         frame = Frame(self.frame, bg="#0a1526")
 
@@ -367,7 +404,7 @@ class RollartApp:
             btn = Button(toolbar, text="Next skater", font=("sans-serif", 14, "bold"), bg="green", fg="white", pady=12, command=action)
             btn.grid(row=0, column=3, pady=10, sticky="nsew")
 
-            btn = Button(toolbar, text="Skip", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12)
+            btn = Button(toolbar, text="Skip", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12, command=self.skip_skater)
             btn.grid(row=0, column=4, pady=10, sticky="nsew")
 
         Grid.columnconfigure(toolbar, 2, weight=1)
@@ -393,6 +430,17 @@ class RollartApp:
             i+=1
 
         combar.pack(fill=X)
+
+        skaterTeam = ''
+
+        if self.program.session and self.program.skater_id:
+            skater = Skater(self.program.skater_id)
+            skaterTeam = skater.team
+
+        skaterName = urllib.parse.quote_plus(self.program.skater)
+
+        url = 'https://www.raiv.fr/wintercup2020/data.php?skaterName='+skaterName+'&skaterTeam='+skaterTeam+'&liveScoreEl=-&liveScoreVal=0.0&liveScoreSk=0.0&finalScoreTechnical=0.0&finalScoreComponents=0.0&finalScoreDeduction=0.0&segmentScore=0.0&finalScore=0.0&rank=0'
+        urllib.request.urlopen(url)
 
         self.program_score()
 
@@ -431,6 +479,21 @@ class RollartApp:
 
         Grid.columnconfigure(self.score_frame, 0, weight=1)
         Grid.columnconfigure(self.score_frame, 1, minsize=300)
+
+        rank = 1
+        teamScore = 0
+        team = 'team'
+
+        if self.program.session:
+            rank = self.program.getRank()
+
+            skater = Skater(self.program.skater_id)
+
+            teamScore = skater.getTeamScore()
+            team = 'team'+skater.team
+
+        url = 'https://www.raiv.fr/wintercup2020/data.php?liveScoreSk='+str(self.program.total_score)+'&finalScoreTechnical='+str(self.program.technical_score)+'&finalScoreComponents='+str(self.program.components_score)+'&finalScoreDeduction='+str(self.program.penalization)+'&segmentScore='+str(self.program.score)+'&finalScore='+str(self.program.total_score)+'&rank='+str(rank)+'&'+team+'='+str(teamScore)
+        urllib.request.urlopen(url)
 
         self.score_frame.pack(fill=X, pady=10)
 
@@ -488,6 +551,9 @@ class RollartApp:
     # Open component dialog
     def program_component(self, component):
         componentApp = ComponentApp(component, self)
+
+        self.componentsApps.append(componentApp)
+
         componentApp.open_window()
 
     # Check program component value
@@ -537,6 +603,9 @@ class RollartApp:
         if self.program.status.upper() == 'STOP':
 
             if self.program.skating_skills > 0 and self.program.transitions > 0 and self.program.choreography > 0 and self.program.performance > 0:
+
+                self.close_components_windows()
+                
                 skater = Skater(self.program.skater_id)
 
                 if self.program.program_name.upper() == 'SHORT':
@@ -557,6 +626,37 @@ class RollartApp:
         
         else:
             messagebox.showwarning(title="Can't confirm", message="Stop program before confirm")
+
+    def skip_skater(self):
+
+        if self.program.status.upper() == 'STOP':
+
+            self.close_components_windows()
+            
+            skater = Skater(self.program.skater_id)
+
+            if self.program.program_name.upper() == 'SHORT':
+                status = 'shortend'
+                skater.short_score = self.program.score
+            else:
+                status = 'longend'
+                skater.long_score = self.program.score
+
+            skater.status = status
+            skater.calculate()
+            skater.record()
+
+            self.resume_category(self.category)
+
+        else:
+            messagebox.showwarning(title="Can't skip", message="Stop program before skip")
+
+    def close_components_windows(self):
+        for app in self.componentsApps:
+            if not app.closed:
+                app.close_window()
+
+        self.componentsApps = []
 
     def results(self, category, programType):
         # Create main window
@@ -609,8 +709,8 @@ class RollartApp:
         programs = category.getResults(programType)
 
         for program in programs:
-            program.calculate()
-            program.record()
+            #program.calculate()
+            #program.record()
             label = Label(frame, text=str(i+1), font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=0, sticky="nsew")
 
@@ -626,7 +726,12 @@ class RollartApp:
             label = Label(frame, text=program.penalization, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=4, sticky="nsew")
 
-            label = Label(frame, text=program.score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            if category.short <= 0 and programType.upper() == 'LONG':
+                score = program.total_score
+            else:
+                score = program.score
+
+            label = Label(frame, text=score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=5, sticky="nsew")
 
             if category.short > 0 and programType.upper() == 'LONG':
@@ -902,6 +1007,19 @@ class BoxElement():
                 self.parent.boxes.append(comp)
 
                 self.lastElement = False
+
+        lastAdded = elements[-1]
+        if lastAdded:
+
+            label = ''
+            if lastAdded.value_label.upper() != 'BASE':
+                label = lastAdded.value_label
+            
+            code = urllib.parse.quote_plus(lastAdded.code+label)
+            self.parent.program.calculate()
+
+            url = 'https://www.raiv.fr/wintercup2020/data.php?liveScoreEl='+code+'&liveScoreVal='+str(lastAdded.base_value)+'&liveScoreSk='+str(self.parent.program.total_score)
+            urllib.request.urlopen(url)
 
     def star(self, element):
         if element.star:

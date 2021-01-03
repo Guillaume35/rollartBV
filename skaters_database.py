@@ -26,6 +26,11 @@ class SkaterApp:
                 'font': 'sans-serif'
             },
             {
+                'var': 'initial_score',
+                'label': 'Ini. score',
+                'value': 0
+            },
+            {
                 'var': 'team',
                 'label': 'Team',
                 'font': 'sans-serif'

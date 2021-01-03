@@ -1,11 +1,13 @@
 from tkinter import *
+from tkinter import messagebox
 from functools import partial
 
 class ListApp:
 
     def __init__(self, window, className, title="List", data=[], labels=[], actions=[], default={}):
 
-        self.frame = Frame(window, bg="#0a1526")
+        self.window = window
+        self.frame = Frame(self.window, bg="#0a1526")
         self.title_frame = Frame(self.frame, bg="#0a1526")
         self.table_frame = Frame(self.frame, bg="#0a1526")
         self.data = data
@@ -45,11 +47,15 @@ class ListApp:
             self.entries[i][j].insert(0, value)
             self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
+        j += 1
+
         action = partial(self.record, i, data)
         self.entries[i].append(Button(self.table_frame, text="Save", font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
-        self.entries[i][j+1].grid(row=i+1, column=j+1, sticky="nesw")
+        self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
         for a in range(len(self.actions)):
+
+            j += 1
 
             actionData = self.actions[a]
 
@@ -60,7 +66,12 @@ class ListApp:
                 action = partial(actionData['action'], data)
 
             self.entries[i].append(Button(self.table_frame, text=actionData['label'], font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
-            self.entries[i][j+a+2].grid(row=i+1, column=j+a+2, sticky="nesw")
+            self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
+
+        j += 1
+        action = partial(self.delete, i, data)
+        self.entries[i].append(Button(self.table_frame, text="Delete", font=("sans-serif", 10), bg="red", fg="white", command=action, borderwidth=1))
+        self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
 
     def record(self, row, data):
@@ -79,7 +90,17 @@ class ListApp:
         ob.record()
 
         if (row == 0):
-            self.add_row(data)
+            self.add_row(ob.getAll())
+
+    def delete(self, row, data):
+
+        MsgBox = messagebox.askquestion ('Delete', 'Confirm delete row ?', icon = 'warning', parent=self.window)
+        if MsgBox == 'yes':
+            ob = self.className(data)
+            ob.delete()
+
+            for w in self.entries[row]:
+                w.destroy()
 
     def display(self):
 
