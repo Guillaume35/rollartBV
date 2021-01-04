@@ -274,6 +274,8 @@ class BoxElement():
                 self.box.empty()
                 lastAdded.record()
 
+            self.box.record()
+
             self.display()
 
             self.parent.program_score()

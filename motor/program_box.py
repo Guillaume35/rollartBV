@@ -123,7 +123,8 @@ class ProgramBox:
                         WHERE `id` = ?''', (
                             self.program,
                             self.type,
-                            self.order
+                            self.order,
+                            self.id
                         ))
 
         self.conn.commit()
