@@ -29,6 +29,7 @@ from tkinter import messagebox
 import tools
 
 from apps.box_element import *
+from apps.result_program import *
 
 import elements_database
 import types_database
@@ -944,7 +945,7 @@ class RollartApp:
         # List frame
         frame = Frame(window, bg="")
 
-        label = Label(frame, text="Results - "+category.name+" - "+programType, font=("sans-serif", 18), fg="white", bg="#0a1526")
+        label = Label(frame, text="Results - "+category.name+" - "+programType, font=("sans-serif", 14), fg="white", bg="#0a1526")
         label.pack(fill=X, pady=15)
 
         frame.pack(fill=X)
@@ -1012,9 +1013,16 @@ class RollartApp:
             label = Label(frame, text=score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=5, sticky="nsew")
 
+            col = 6
+
             if category.short > 0 and programType.upper() == 'LONG':
                 label = Label(frame, text=program.total_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
-                label.grid(row=i+1, column=6, sticky="nsew")
+                label.grid(row=i+1, column=col, sticky="nsew")
+                col += 1
+            
+            action = partial(self.result_program, program)
+            btn = Button(frame, text="Details", font=("sans-serif", 12), command=action)
+            btn.grid(row=i+1, column=col, sticky="nsew")
 
             i +=1
         # End of programs loop
@@ -1026,8 +1034,11 @@ class RollartApp:
         Grid.columnconfigure(frame, 4, minsize=120)
         Grid.columnconfigure(frame, 5, minsize=250)
 
+        col = 6
+
         if category.short > 0 and programType.upper() == 'LONG':
-            Grid.columnconfigure(frame, 6, minsize=250)
+            Grid.columnconfigure(frame, col, minsize=250)
+            col += 1
 
         frame.pack(fill=X)
         # End of list frame
@@ -1035,6 +1046,15 @@ class RollartApp:
 
         window.mainloop()
     # End of results()
+
+
+    #
+    # result_program(program = Program)
+    # Open result program application to display details on new window
+    def result_program(self, program):
+        resultApp = ResultProgramApp(program)
+        resultApp.open_window()
+    # End of result_program()
 
 if __name__ == "__main__":
 

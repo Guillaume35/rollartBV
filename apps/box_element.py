@@ -50,7 +50,11 @@ class BoxElement():
         self.mode = 'display'
         self.btnEdit = None
         self.btnDel = None
+        self.readonly = False
 
+    # 
+    # wrapper(mode = String)
+    # 4 possible modes : auto (decide to open form mode or display mode), form, display and readonly
     def wrapper(self, mode='auto'):
 
         if self.frame:
@@ -58,19 +62,29 @@ class BoxElement():
 
         self.frame = Frame(self.root, bg="#0a1526", borderwidth=1, relief="groove")
 
+        if mode == 'readonly':
+            self.readonly = True
+
         Grid.rowconfigure(self.frame, self.box.order-1, weight=1)
 
+        col = 0
+
         label = Label(self.frame, text="#"+str(self.box.order), font=("sans-serif", 14), bg="#bd3800", fg="white", padx=10, width=3)
-        label.grid(row=self.box.order-1, column=0, sticky="nsew")
+        label.grid(row=self.box.order-1, column=col, sticky="nsew")
 
-        self.btnEdit = Button(self.frame, text="Edit", font=("sans-serif", 11), bg="#dfe7e8", command=self.toggleMode)
-        self.btnEdit.grid(row=self.box.order-1, column=1, sticky="nsew")
+        col += 1
 
-        Grid.columnconfigure(self.frame, 2, weight=1)
+        if mode != 'readonly':
+            self.btnEdit = Button(self.frame, text="Edit", font=("sans-serif", 11), bg="#dfe7e8", command=self.toggleMode)
+            self.btnEdit.grid(row=self.box.order-1, column=col, sticky="nsew")
+
+            col += 1
+
+        Grid.columnconfigure(self.frame, col, weight=1)
 
         elements = self.box.getElements()
 
-        if (self.box.id and len(elements) and mode != 'form') or mode == 'display':
+        if (self.box.id and len(elements) and mode != 'form') or mode == 'display' or mode == 'readonly':
             self.display()
 
         else:
@@ -149,7 +163,10 @@ class BoxElement():
 
     def display(self):
 
-        self.mode = 'display'
+        if self.readonly:
+            self.mode = 'readonly'
+        else:
+            self.mode = 'display'
 
         if self.frame_content:
             self.frame_content.destroy()
@@ -163,24 +180,55 @@ class BoxElement():
         for element in elements:
             element_frame = Frame(self.frame_content, bg="#0a1526")
 
-            label = Label(element_frame, text=element.type, font=("sans-serif", 12), bg="#0a1526", fg="white")
-            label.grid(row=i, column=0, sticky="w", padx=10)
+            col = 0
 
-            action = partial(self.star, element)
+            label = Label(element_frame, text=element.type, font=("sans-serif", 12), bg="#0a1526", fg="white", justify=LEFT, anchor="e")
+            label.grid(row=i, column=col, padx=10, sticky="w")
 
-            btn = Button(element_frame, text="*", font=("sans-serif", 11), command=action)
+            col += 1
 
-            if element.star:
-                btn.configure(bg='yellow', fg='red')
-            btn.grid(row=i, column=1, sticky="nsew")
+            # Add star and time bonus button in all mode except readonly
+            if self.mode != 'readonly':
+                action = partial(self.star, element)
 
-            action = partial(self.time, element)
+                btn = Button(element_frame, text="*", font=("sans-serif", 11), command=action)
 
-            btn = Button(element_frame, text="T", font=("sans-serif", 11), command=action)
+                if element.star:
+                    btn.configure(bg='yellow', fg='red')
+                btn.grid(row=i, column=col, sticky="nsew")
 
-            if element.time:
-                btn.configure(bg='yellow', fg='red')
-            btn.grid(row=i, column=2, sticky="nsew")
+                col += 1
+
+                action = partial(self.time, element)
+
+                btn = Button(element_frame, text="T", font=("sans-serif", 11), command=action)
+
+                if element.time:
+                    btn.configure(bg='yellow', fg='red')
+                btn.grid(row=i, column=col, sticky="nsew")
+
+                col += 1
+
+            # Add label for star and time for readonly mode
+            else:
+                text = ''
+                if element.star:
+                    text = '*'
+                
+                label = Label(element_frame, text=text, font=("sans-serif", 12, "bold"), bg="#0a1526", fg="red")
+                label.grid(row=i, column=col, padx=10)
+
+                col += 1
+
+                text = ''
+                if element.time:
+                    text = 'T'
+                
+                label = Label(element_frame, text=text, font=("sans-serif", 12, "bold"), bg="#0a1526", fg="white")
+                label.grid(row=i, column=col, padx=10)
+
+                col += 1
+            # End of mode check for star and time button
 
             base_code = ''
             if element.value_label.lower() != 'base':
@@ -189,57 +237,99 @@ class BoxElement():
             if element.bonus != '':
                 base_code += '('+element.bonus+')'
 
-            label = Label(element_frame, text=element.code+base_code, font=("sans-serif", 12), bg="#0a1526", fg="white")
-            label.grid(row=i, column=3, sticky="w", padx=10)
+            label = Label(element_frame, text=element.code+base_code, font=("sans-serif", 12), bg="#0a1526", fg="white", justify=LEFT, anchor="e")
+            label.grid(row=i, column=col, sticky="w", padx=10)
 
-            if not element.star and element.base_value > 0:
+            col += 1
 
-                qoes = [-3, -2, -1, 0, 1, 2, 3]
-                j = 1
+            # Show QOE buttons if mode is not readonly
+            if self.mode != 'readonly':
+                if not element.star and element.base_value > 0:
 
-                for qoe in qoes:
-                    label = '+'+str(qoe) if qoe > 0 else str(qoe)
-                    
-                    if (int(qoe) == int(element.qoe)):
-                        if qoe > 0:
-                            color = "PaleGreen1"
+                    qoes = [-3, -2, -1, 0, 1, 2, 3]
 
-                        elif qoe < 0:
-                            color = "salmon"
+                    for qoe in qoes:
+                        label = '+'+str(qoe) if qoe > 0 else str(qoe)
+                        
+                        if (int(qoe) == int(element.qoe)):
+                            if qoe > 0:
+                                color = "PaleGreen1"
 
+                            elif qoe < 0:
+                                color = "salmon"
+
+                            else:
+                                color = "DarkSlategray1"
+                        
                         else:
-                            color = "DarkSlategray1"
-                    
-                    else:
-                        color = "#dfe7e8"
-                    
-                    action = partial(self.setQoe, element, qoe)
+                            color = "#dfe7e8"
+                        
+                        action = partial(self.setQoe, element, qoe)
 
-                    btn = Button(element_frame, text=label, font=("sans-serif", 11), bg=color, command=action)
-                    btn.grid(row=i, column=3+j, sticky="nsew")
-                    j += 1
+                        btn = Button(element_frame, text=label, font=("sans-serif", 11), bg=color, command=action)
+                        btn.grid(row=i, column=col, sticky="nsew")
+                        col += 1
+                
+                else:
+                    col += 7
+            
+            # Mode is readonly, we only display applied QOE
+            else:
+                color = 'white'
+                if not element.star and element.base_value > 0:
+                    label = str(element.qoe)
+                    if int(element.qoe) > 0:
+                        label = '+'+label
+                        color = "PaleGreen1"
+                    elif int(element.qoe) < 0:
+                        color = "salmon"
+                    else:
+                        color = "DarkSlategray1"
+                else:
+                    label = ''
+                
+                label = Label(element_frame, text=label, font=("sans-serif", 12), bg="#0a1526", fg=color)
+                label.grid(row=i, column=col, sticky="w", padx=10)
+                col += 1
+            # End of check readonly mode
 
             label = Label(element_frame, text=element.stared_value, font=("sans-serif", 12), bg="#0a1526", fg="white")
-            label.grid(row=i, column=11, sticky="w", padx=10)
+            label.grid(row=i, column=col, sticky="w", padx=10)
 
-            Grid.columnconfigure(element_frame, 0, weight=1)
-            Grid.columnconfigure(element_frame, 1)
-            Grid.columnconfigure(element_frame, 2)
-            Grid.columnconfigure(element_frame, 3, minsize=300)
+            col += 1
 
-            j = 0
+            # cols configuration in all mode except readonly
+            if self.mode != 'readonly':
+                Grid.columnconfigure(element_frame, 0, weight=1)
+                Grid.columnconfigure(element_frame, 1)
+                Grid.columnconfigure(element_frame, 2)
+                Grid.columnconfigure(element_frame, 3, minsize=300)
 
-            while j < 7:
-                Grid.columnconfigure(element_frame, 4+j, minsize=90)
-                j += 1
+                j = 0
 
-            Grid.columnconfigure(element_frame, 11, minsize=150)
+                while j < 7:
+                    Grid.columnconfigure(element_frame, 4+j, minsize=90)
+                    j += 1
+
+                Grid.columnconfigure(element_frame, 11, minsize=150)
+
+            # cols configuration in readonly mode
+            else:
+                Grid.columnconfigure(element_frame, 0)
+                Grid.columnconfigure(element_frame, 1, minsize=50)
+                Grid.columnconfigure(element_frame, 2, minsize=50)
+                Grid.columnconfigure(element_frame, 3, minsize=300)
+                Grid.columnconfigure(element_frame, 4, minsize=90)
+                Grid.columnconfigure(element_frame, 5, minsize=200)
+            # End of mode check
+
 
             element_frame.pack(fill=X)
 
             i += 1
 
-        self.btnEdit.configure(bg="#dfe7e8")
+        if self.mode != 'readonly':
+            self.btnEdit.configure(bg="#dfe7e8")
         self.frame_content.grid(row=self.box.order-1, column=2, sticky="nsew")
 
     def toggleMode(self):
