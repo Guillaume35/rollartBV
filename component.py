@@ -21,7 +21,6 @@ import sqlite3
 from tkinter import *
 from tkinter import messagebox
 import tools
-import numpy
 from functools import partial
 
 class ComponentApp:
@@ -156,15 +155,18 @@ class ComponentApp:
 
         comData = self.parent.program.getAll()
 
-        for i in numpy.arange(self.unit, self.unit+1, 0.25):
+        for i in range(0, 100, 25):
 
-            if i > 0 and i <= 10:
+            val = str(self.unit)+'.'+str(i)
+            val = float(val)
 
-                action = partial(self.selectVal, i)
+            if val > 0 and val <= 10:                
 
-                btn = Button(self.deci_frame, text=i, font=('sans-serif', 14), padx=10, pady=10, command=action)
+                action = partial(self.selectVal, val)
 
-                if i == comData[self.component]:
+                btn = Button(self.deci_frame, text=val, font=('sans-serif', 14), padx=10, pady=10, command=action)
+
+                if val == comData[self.component]:
                     btn.configure(bg="cyan2")
                     btn.configure(activebackground="cyan2")
 
