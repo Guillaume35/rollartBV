@@ -1,3 +1,22 @@
+# Rollart unchained
+# Copyright (C) 2021  Skaters Team community
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Contributors :
+# Guillaume MODARD <guillaumemodard@gmail.com>
+
 import sqlite3
 import os
 from pathlib import Path
@@ -96,6 +115,7 @@ class Session:
         c.execute('DELETE FROM `sessions` WHERE `id` = ?', (self.id,))
         self.conn.commit()
 
+    # Open the session
     def open(self):
         c = self.conn.cursor()
 
@@ -103,11 +123,13 @@ class Session:
         c.execute('UPDATE `sessions` SET `lock` = "0" WHERE `id` != ?', (self.id,))
         self.conn.commit()
 
+    # Close all session
     def close(self):
         c = self.conn.cursor()
         c.execute('UPDATE `sessions` SET `lock` = "0"')
         self.conn.commit()
 
+    # Get categories of this session
     def getCategories(self):
         c = self.conn.cursor()
         c.execute('SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order`, `id`', (self.id, ))

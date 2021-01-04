@@ -1,3 +1,22 @@
+# Rollart unchained
+# Copyright (C) 2021  Skaters Team community
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Contributors :
+# Guillaume MODARD <guillaumemodard@gmail.com>
+
 import sqlite3
 import os
 from pathlib import Path
@@ -167,6 +186,7 @@ class Skater:
         c.execute('DELETE FROM `skaters` WHERE `id` = ?', (self.id,))
         self.conn.commit()
 
+    # Get the opened program of the skater or return none
     def getCurrentProgram(self):
 
         if self.status.upper() == 'LONG' or self.status.upper() == 'SHORT' or self.status.upper() == 'LONGSTART' or self.status.upper() == 'SHORTSTART':
