@@ -222,6 +222,10 @@ class ProgramElement:
     
     # Calculate sum values
     def calculate(self):
+        
+        # Value autocheck
+        if self.value_label == '<<<':
+                self.qoe = -3
 
         self.read()
 
@@ -390,33 +394,54 @@ class ProgramElement:
         if element.code:
             self.label = element.name
 
-            # Combo jumb bonus
-            if self.type == 'ComboJump':
-                if self.value_label == '<':
-                    self.base_value = element.combo_under
-                
-                elif self.value_label == '<<':
-                    self.base_value = element.combo_half
-                
-                elif self.value_label == '<<<':
-                    self.base_value = element.combo_down
-                
+            inited = False
+
+            # In case of downgraded, we need to find the element below
+            if self.value_label == '<<<':
+                rot = self.code[0]
+                rot = int(rot) - 1
+                if rot == 0:
+                    self.base_value = 0
+                    inited = True
                 else:
-                    self.base_value = element.base_combo
+                    el = self.code[1:]
+                    codeDown = str(rot)+el
+                    # Element is replaced by the one bellow both for base value and QOE
+                    element = Element(codeDown)
+            # End of check downgraded
+
             
-            # All other types
-            else:
-                if self.value_label == '<':
-                    self.base_value = element.under
+            if not inited:
+                # Combo jumb bonus
+                if self.type == 'ComboJump':
+                    if self.value_label == '<':
+                        self.base_value = element.combo_under
+                    
+                    elif self.value_label == '<<':
+                        self.base_value = element.combo_half
+                    
+                    else:
+                        # in the case of <<<, this is the base value of the element bellow
+                        self.base_value = element.base_combo
+                    # End of check base value
                 
-                elif self.value_label == '<<':
-                    self.base_value = element.half
-                
-                elif self.value_label == '<<<':
-                    self.base_value = element.down
-                
+                # All other types
                 else:
-                    self.base_value = element.base
+                    if self.value_label == '<':
+                        self.base_value = element.under
+                    
+                    elif self.value_label == '<<':
+                        self.base_value = element.half
+                    
+                    else:
+                        # in the case of <<<, this is the base value of the element bellow
+                        self.base_value = element.base
+                    # End of check base value
+                # End of check element type
+            # End of check inited
+
+            if self.value_label == '<<<':
+                self.qoe = -3
 
             # QOE reader
             if self.qoe == 3:

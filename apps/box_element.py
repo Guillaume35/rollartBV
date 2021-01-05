@@ -19,6 +19,7 @@
 
 from functools import partial
 from tkinter import *
+from tkinter import messagebox
 
 import urllib.request
 import urllib.parse
@@ -264,7 +265,10 @@ class BoxElement():
                         else:
                             color = "#dfe7e8"
                         
-                        action = partial(self.setQoe, element, qoe)
+                        if element.value_label == '<<<':
+                            action = partial(messagebox.showwarning, title="Can't change", message="QOE for <<< jump must be -3")
+                        else:
+                            action = partial(self.setQoe, element, qoe)
 
                         btn = Button(element_frame, text=label, font=("sans-serif", 11), bg=color, command=action)
                         btn.grid(row=i, column=col, sticky="nsew")

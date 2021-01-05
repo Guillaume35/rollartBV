@@ -21,14 +21,27 @@ from tkinter import *
 from tkinter import messagebox
 from functools import partial
 
+from apps.scrolled_frame import *
+
 class ListApp:
 
     def __init__(self, window, className, title="List", data=[], labels=[], actions=[], default={}):
 
         self.window = window
         self.frame = Frame(self.window, bg="#0a1526")
-        self.title_frame = Frame(self.frame, bg="#0a1526")
-        self.table_frame = Frame(self.frame, bg="#0a1526")
+
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+
+        # Add a scroll frame for the rest of the elements
+        self.scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
+
+        self.scrollFrameIn = self.scrollFrame.interior
+        self.scrollFrame.interior.configure(bg="#0a1526")
+        self.scrollFrame.canvas.configure(bg="#0a1526")
+
+        self.title_frame = Frame(self.scrollFrameIn, bg="#0a1526")
+        self.table_frame = Frame(self.scrollFrameIn, bg="#0a1526")
         self.data = data
         self.labels = labels
         self.actions = actions
@@ -63,6 +76,10 @@ class ListApp:
                 value = ''
 
             self.entries[i].append(Entry(self.table_frame, width=width, font=(font, 10), borderwidth=1, relief='flat'))
+            action = partial(self.focusIn, i)
+            self.entries[i][j].bind('<FocusIn>', action)
+            action = partial(self.focusOut, i)
+            self.entries[i][j].bind('<FocusOut>', action)
             self.entries[i][j].insert(0, value)
             self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
@@ -91,6 +108,16 @@ class ListApp:
         action = partial(self.delete, i, data)
         self.entries[i].append(Button(self.table_frame, text="Delete", font=("sans-serif", 10), bg="red", fg="white", command=action, borderwidth=1))
         self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
+    
+    def focusIn(self, i, event):
+        for entry in self.entries[i]:
+            if entry.winfo_class() == 'Entry':
+                entry.configure(bg="yellow")
+    
+    def focusOut(self, i, event):
+        for entry in self.entries[i]:
+            if entry.winfo_class() == 'Entry':
+                entry.configure(bg="white")
 
 
     def record(self, row, data):
@@ -170,4 +197,10 @@ class ListApp:
         # add to window
         self.title_frame.pack(pady=15)
         self.table_frame.pack(pady=15, fill=X)
-        self.frame.pack(fill=X)
+
+        self.scrollFrame.grid(row=0, column=0, sticky="nesw")
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")

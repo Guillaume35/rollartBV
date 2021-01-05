@@ -9,9 +9,13 @@
 # https://gist.github.com/bakineugene/76c8f9bcec5b390e45df
 
 # Improvements made by other contributors :
-# - Guillaume MODARD : https://github.com/Guillaume35
+# - JackTheEngineer : https://github.com/JackTheEngineer (mousescroll system)
+# - Guillaume MODARD : https://github.com/Guillaume35 (configurable widget and multi OS)
 
 from tkinter import *
+import platform
+import functools
+fp = functools.partial
 
 # http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
 
@@ -56,7 +60,34 @@ class VerticalScrolledFrame(Frame):
             if interior.winfo_reqwidth() != self.canvas.winfo_width():
                 # update the inner frame's width to fill the canvas
                 self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
+
+        # The following code manage mousewheel system depending on OS used
+        def _on_mousewheel(event, scroll = None):
+            if  platform.system() == 'Linux':
+                self.canvas.yview_scroll(int(scroll), "units")
+
+            elif platform.system() == 'Windows':
+                self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        def _bind_to_mousewheel(event):
+            if  platform.system() == 'Linux':
+                self.canvas.bind_all("<Button-4>", fp(_on_mousewheel, scroll=-1))
+                self.canvas.bind_all("<Button-5>", fp(_on_mousewheel, scroll=1))
+            
+            elif platform.system() == 'Windows':
+                self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_from_mousewheel(event):
+            if  platform.system() == 'Linux':
+                self.canvas.unbind_all("<Button-4>")
+                self.canvas.unbind_all("<Button-5>")
+
+            elif platform.system() == 'Windows':
+                self.canvas.unbind_all("<MouseWheel>")
+
         self.canvas.bind('<Configure>', _configure_canvas)
+        self.canvas.bind('<Enter>', _bind_to_mousewheel)
+        self.canvas.bind('<Leave>', _unbind_from_mousewheel)
 
 
 if __name__ == "__main__":

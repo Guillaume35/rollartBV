@@ -35,7 +35,6 @@ class ResultProgramApp:
         self.window = None
         self.program = program
         self.frame = None
-        self.canvas = None
 
     #
     # open_window()

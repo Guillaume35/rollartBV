@@ -63,10 +63,6 @@ def open_window():
             'label': '<<'
         },
         {
-            'var': 'down',
-            'label': '<<<'
-        },
-        {
             'var': 'qoem1',
             'label': '-1'
         },
@@ -89,10 +85,6 @@ def open_window():
         {
             'var': 'combo_half',
             'label': 'Comb<<'
-        },
-        {
-            'var': 'combo_down',
-            'label': 'Comb<<<'
         },
         {
             'var': 'type',
