@@ -31,6 +31,8 @@ import tools
 from apps.box_element import *
 from apps.result_program import *
 
+from apps.scrolled_frame import *
+
 import elements_database
 import types_database
 from categories_database import *
@@ -133,7 +135,11 @@ class RollartApp:
         # Clear the root window and add a new empty frame
         self.frame.pack_forget()
         self.frame.destroy()
+
         self.frame = Frame(self.window, bg="#0a1526")
+
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(1, weight=1)
 
         # Title frame
         frame = Frame(self.frame, bg="#bd3800")
@@ -144,7 +150,14 @@ class RollartApp:
         btn = Button(frame, text="Home", font=("sans-serif", 12), command=self.home)
         btn.grid(row=0, column=0, sticky="nesw", ipadx=5, ipady=10)
 
-        frame.pack(fill=X)
+        frame.grid(row=0, column=0, sticky="nesw")
+
+        # Add a scroll frame for the rest of the elements
+        scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
+
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
 
         #
         # TEAMS TABLE
@@ -157,14 +170,14 @@ class RollartApp:
 
             if len(teams):
 
-                frame = Frame(self.frame, bg="#0a1526")
+                frame = Frame(scrollFrameIn, bg="#0a1526")
 
                 label = Label(frame, text="Teams score", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
                 label.pack(fill=X)
 
                 frame.pack(fill=X, pady=15)
 
-                frame = Frame(self.frame, bg="#0a1526")
+                frame = Frame(scrollFrameIn, bg="#0a1526")
 
                 i=0
 
@@ -189,10 +202,10 @@ class RollartApp:
         # CATEGORIES TABLE
         # List all the categories in the defined order and show available options for each one.
         # Options can be : start short, start long, wait long (if short is not ended), results short (if ended), results long (if ended)
-        label = Label(self.frame, text="Categories", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
+        label = Label(scrollFrameIn, text="Categories", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
         label.pack(fill=X, pady=15)
 
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(scrollFrameIn, bg="#0a1526")
 
         categories = self.session.getCategories()
 
@@ -263,7 +276,12 @@ class RollartApp:
         # End of CATEGORIES TABLE
         #
 
-        self.frame.pack(fill=X)
+        scrollFrame.grid(row=1, column=0, sticky="nesw")
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")
     # End of start_session()
 
 

@@ -20,6 +20,7 @@
 from tkinter import *
 
 from apps.box_element import *
+from apps.scrolled_frame import *
 
 from motor.category import *
 
@@ -34,6 +35,7 @@ class ResultProgramApp:
         self.window = None
         self.program = program
         self.frame = None
+        self.canvas = None
 
     #
     # open_window()
@@ -45,31 +47,41 @@ class ResultProgramApp:
 
         # Customizing window
         self.window.title("Program result - "+self.program.skater+" ("+self.program.program_name+") - RollArt BV")
-        self.window.geometry("1600x850")
-        self.window.minsize(1280,720)
+        self.window.geometry("1280x900")
+        self.window.minsize(900,720)
         self.window.config(background="#0a1526")
 
         self.frame = Frame(self.window, bg="#0a1526")
 
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+
+        # Add a scroll frame for the rest of the elements
+        scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
+
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
+
         # Title frame
-        label = Label(self.frame, text="Program result - "+self.program.skater+" ("+self.program.program_name+")", font=("sans-serif", 14), fg="white", bg="#0a1526")
+        label = Label(scrollFrameIn, text="Program result - "+self.program.skater+" ("+self.program.program_name+")", font=("sans-serif", 14), fg="white", bg="#0a1526")
         label.pack(fill=X, pady=15)
 
         category = Category(self.program.category)
 
-        label = Label(self.frame, text=category.name, font=("sans-serif", 12), fg="white", bg="#0a1526")
+        label = Label(scrollFrameIn, text=category.name, font=("sans-serif", 12), fg="white", bg="#0a1526")
         label.pack(fill=X, pady=15)
 
         # We are listing all boxes and call box element in readonly mode for display
         boxes = self.program.getBoxes()
 
         for box in boxes:
-            comp = BoxElement(box, self.frame, self)
+            comp = BoxElement(box, scrollFrameIn, self)
             comp.wrapper('readonly')
         # End of boxes loop
 
         # Technical score
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(scrollFrameIn, bg="#0a1526")
 
         label = Label(frame, text='Technical elements', font=("sans-serif", 12, 'bold'), fg="white", bg="#0a1526", borderwidth=1, relief="groove", justify=LEFT, anchor="w", padx=10)
         label.grid(row=0, column=0, sticky="nsew", ipady=10)
@@ -88,7 +100,7 @@ class ResultProgramApp:
         programData = self.program.getAll()
 
         # Components table
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(scrollFrameIn, bg="#0a1526")
 
         i = 0
 
@@ -129,7 +141,7 @@ class ResultProgramApp:
         # End of components table
 
         # Final score table
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(scrollFrameIn, bg="#0a1526")
 
         label = Label(frame, text=str(self.program.fall)+ ' Fall', font=("sans-serif", 10), fg="white", bg="#0a1526", borderwidth=1, relief="groove", justify=LEFT, anchor="w", padx=10)
         label.grid(row=0, column=0, sticky="nsew", ipady=10)
@@ -149,7 +161,12 @@ class ResultProgramApp:
         frame.pack(fill=X, pady=15)
         # End of final score table
 
-        self.frame.pack(fill=X)
+        scrollFrame.grid(row=0, column=0, sticky="nesw")
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")
 
         self.window.mainloop()
     # End of open_window()
