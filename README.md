@@ -7,31 +7,36 @@ and should not be used for production.
 
 The binary executable file is not available currently. See usage section for more information.
 
-## Usage
+## Usage and installation
 
-This program is tested under Ubuntu Linux 20.04 distribution.
+This program is currently tested under Ubuntu Linux 20.04 distribution and Windows 10 system.
 
-### Dependencies
+No standalone package is still ready. It needs manual installation of the following dependencies :
 
 - Python3
-- Tkinter for python
+- Tkinter for python (normaly builtin since python 3, so you have nothing more to install)
 - sqlite3 for python (normaly builtin, so you have nothing to install)
+
+### Linux
+
+Install python3 from official distribution repository.
 
 ```
 sudo apt install python3 python3-tk
 ```
 
-### Generate database
+### Windows
 
-At program starting, database are checked and created if needed. If data structure has changed
-with a new version, it will be updated in your current database without the need of any update 
-system.
+Install python3 from official website. Be sure you download the last stable version 3.
 
-### Start
+https://www.python.org/downloads/windows/
 
-Go to the extraction forlder and then start rollartBV.py file with python3.
+## Start application
 
-#### Linux
+Once all dependencies are installed, go to the extraction forlder and then start rollartBV.py file 
+with python3.
+
+### Linux
 
 Go to the extraction folder with the following command:
 
@@ -44,3 +49,32 @@ Execute the following
 ```
 python3 ./rollartBV.py
 ```
+
+### Windows
+
+Type **Win + R** and enter *cmd* to start command line program.
+
+In the command line, start rollartBV.py with python3 :
+
+```
+py path\to\rollartBV.py
+```
+
+## Generate database
+
+At program starting, database are checked and created if needed. If data structure has changed
+with a new version, it will be updated in your current database without the need of any update 
+system.
+
+All application data are saved in a .rollartBV/ folder located in the home directory. The location 
+of this directory can vary, depending on your system and configuration.
+
+### Linux
+
+Date folder should be the following :
+*/home/YOU/.rollartBV*
+
+### Windows
+
+Data folder should be the following :
+*C:\Users\YOU\.rollartBV*
