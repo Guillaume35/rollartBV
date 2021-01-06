@@ -52,12 +52,13 @@ from component import *
 
 #
 # RollartApp class
-# 
-# This is the root application class managing all the main process :
-# Opening main window, starting and judging a program by the data
-# operator and starting all application subprocess.
-
 class RollartApp:
+
+    """
+    * This is the root application class managing all the main process :
+    * Opening main window, starting and judging a program by the data
+    * operator and starting all application subprocess.
+    """
 
     def __init__(self):
         # Create main window
