@@ -89,6 +89,7 @@ class RollartApp:
         self.session = None
         self.category = None
         self.componentsApps = []
+        self.footer = None
 
         # Check current session
         # The system is able to open only one session at a time even if the
@@ -477,6 +478,9 @@ class RollartApp:
 
         self.frame = Frame(self.window, bg="#0a1526")
 
+        self.frame.grid_rowconfigure(1, weight=1)
+        self.frame.grid_columnconfigure(0, weight=1)
+
         #
         # Title frame
         # It display home button, title, skaters and program name which will be controled by
@@ -495,7 +499,7 @@ class RollartApp:
         Grid.rowconfigure(title_frame, 0, weight=1)
         Grid.columnconfigure(title_frame, 1, weight=1)
 
-        title_frame.pack(ipady=5, fill=X)
+        title_frame.grid(row=0, column=0, sticky="nesw")
         # End of title frame
         #
 
@@ -505,7 +509,15 @@ class RollartApp:
         # Box are the containers in which elements are recorded. It is the sequence of the 
         # program order by specialist or assistant call. Boxes is used to enter the type of
         # element (ex : SoloJump)
-        self.boxes_frame = Frame(self.frame,  bg="#0a1526")
+
+        # Add a scroll frame for box list
+        scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
+
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
+
+        self.boxes_frame = Frame(scrollFrameIn,  bg="#0a1526")
 
         boxes = self.program.getBoxes()
 
@@ -549,14 +561,20 @@ class RollartApp:
 
         self.boxes_frame.pack(fill=X)
 
+        scrollFrame.grid(row=1, column=0, sticky="nesw")
+
         # End of BOX LIST
         #
+
+
+        # FOOTER
+        self.footer = Frame(self.frame, bg="#0a1526")
 
 
         #
         # FOOTER TOOLBAR
         # We add all options for the global managment of the program : start/stop, penalty, next skater, skip...
-        toolbar = Frame(self.frame, bg="#0a1526")
+        toolbar = Frame(self.footer, bg="#0a1526")
 
         btn = Button(toolbar, text=str(self.program.fall)+" Fall", font=("sans-serif", 14, "bold"), bg="DarkOrange2", fg="white", pady=12)
         action = partial(self.program_fall, btn)
@@ -607,7 +625,7 @@ class RollartApp:
         # Components can be added by data operator directly after beeing called by a judge.
         components = ['skating_skills', 'transitions', 'choreography', 'performance']
 
-        combar = Frame(self.frame, bg="#0a1526")
+        combar = Frame(self.footer, bg="#0a1526")
 
         i = 0
 
@@ -653,7 +671,12 @@ class RollartApp:
         # Calling program score footer
         self.program_score()
 
-        self.frame.pack(fill=X)
+        self.footer.grid(row=2, column=0, sticky="nesw")
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")
     # End of open_program()
 
 
@@ -666,7 +689,7 @@ class RollartApp:
         if self.score_frame:
             self.score_frame.destroy()
 
-        self.score_frame = Frame(self.frame,  bg="#0a1526")
+        self.score_frame = Frame(self.footer,  bg="#0a1526")
 
         # Refresh program score and record
         self.program.calculate()
@@ -836,8 +859,17 @@ class RollartApp:
 
         # Categories frame
         frame = Frame(window, bg="")
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
 
-        label = Label(frame, text="Skaters", font=("sans-serif", 18), fg="white", bg="#0a1526")
+        # Add a scroll frame for box list
+        scrollFrame = VerticalScrolledFrame(frame, bg="#0a1526")
+
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
+
+        label = Label(scrollFrameIn, text="Skaters", font=("sans-serif", 18), fg="white", bg="#0a1526")
         label.pack(fill=X, pady=15)
 
         categories = self.session.getCategories()
@@ -847,11 +879,16 @@ class RollartApp:
 
             skaterApp = SkaterApp(self, category)
 
-            btn = Button(frame, text=category.name, font=("sans-serif", 12), command=skaterApp.open_window, pady=8)
+            btn = Button(scrollFrameIn, text=category.name, font=("sans-serif", 12), command=skaterApp.open_window, pady=8)
             btn.pack(fill=X, pady=8)
         # End of categories loop
 
-        frame.pack(fill=X)
+        scrollFrame.grid(row=0, column=0, sticky="nesw")
+
+        window.grid_columnconfigure(0, weight=1)
+        window.grid_rowconfigure(0, weight=1)
+
+        frame.grid(row=0, column=0, sticky="nesw")
 
         window.mainloop()
     # End of skater_database()
