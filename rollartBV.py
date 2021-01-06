@@ -66,7 +66,11 @@ class RollartApp:
 
         # Customizing window
         self.window.title("RollArt Unchained")
-        self.window.geometry("1600x900")
+
+        w = self.window.winfo_screenwidth()
+        h = self.window.winfo_screenheight()
+
+        self.window.geometry("%dx%d+0+0" % (w, h))
         self.window.minsize(1280,720)
         self.window.config(background="#0a1526")
 
@@ -488,7 +492,14 @@ class RollartApp:
         # the data operator and assistant.
         title_frame = Frame(self.frame, bg="#bd3800")
 
-        btn = Button(title_frame, text="Home", font=("sans-serif", 12), command=self.home)
+        if self.session:
+            action=self.start_session
+            text="Back"
+        else:
+            action=self.home
+            text="Home"
+
+        btn = Button(title_frame, text=text, font=("sans-serif", 12), command=action)
         btn.grid(row=0, column=0, sticky="nsew")
 
         label_title = Label(title_frame, text="Record program", font=("sans-serif", 18), bg="#bd3800", fg="white", padx=10)
