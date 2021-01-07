@@ -24,11 +24,13 @@ from motor.program_element import *
 
 #
 # JumpElement(element = ProgramElement, root = Frame, parent = BoxElement) Class
-#
-# Add a jump element to a program with 2 modes : display or form. Form is for 
-# the recording of the technical specialist information. Display is a readonly mode.
-# Jump can be SoloJump or ComboJump type
 class JumpElement():
+
+    """
+    * Add a jump element to a program with 2 modes : display or form. Form is for 
+    * the recording of the technical specialist information. Display is a readonly mode.
+    * Jump can be SoloJump or ComboJump type
+    """
 
     def __init__(self, element, root, parent):
         self.root = root
@@ -144,7 +146,7 @@ class JumpElement():
 
 
         # Jump
-        btns = ['W', 'T', 'S', 'F', 'Lz', 'Lo', 'Th', 'A']
+        btns = ['W', 'T', 'S', 'F', 'Lz', 'LzNE', 'Lo', 'Th', 'A']
         
         frame_jump = Frame(self.frame, bg="#0a1526")
 
