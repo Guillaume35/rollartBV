@@ -385,18 +385,29 @@ class BoxElement():
 
                 self.lastElement = False
 
-            lastAdded = elements[-1]
-            if lastAdded:
+            #
+            # SERVER EXCHANGE
+            # Sending data on a server is only available for session with online checked
+            online = False
 
-                label = ''
-                if lastAdded.value_label.upper() != 'BASE':
-                    label = lastAdded.value_label
-                
-                code = urllib.parse.quote_plus(lastAdded.code+label)
-                self.parent.program.calculate()
+            if self.parent.session:
+                if self.parent.session.online:
+                    online = True
 
-                url = 'https://www.raiv.fr/wintercup2020/data.php?liveScoreEl='+code+'&liveScoreVal='+str(lastAdded.base_value)+'&liveScoreSk='+str(self.parent.program.total_score)
-                urllib.request.urlopen(url)
+            if online:
+                lastAdded = elements[-1]
+                if lastAdded:
+
+                    label = ''
+                    if lastAdded.value_label.upper() != 'BASE':
+                        label = lastAdded.value_label
+                    
+                    code = urllib.parse.quote_plus(lastAdded.code+label)
+                    self.parent.program.calculate()
+
+                    url = self.parent.display_url+'?liveScoreEl='+code+'&liveScoreVal='+str(lastAdded.base_value)+'&liveScoreSk='+str(self.parent.program.total_score)
+                    urllib.request.urlopen(url)
+            # End of SERVER EXCHANGE
 
     def star(self, element):
         if element.star:

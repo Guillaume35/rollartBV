@@ -65,7 +65,9 @@ class Session:
         values = {
             'id': 0,
             'name': 'Unnamed',
-            'date': time.strftime('%Y-%m-%d')
+            'date': time.strftime('%Y-%m-%d'),
+            'display_url': 'https://localhost/rollart/data.php?skaterName={{skaterName}}&skaterTeam={{skaterTeam}}&liveScoreEl={{liveScoreEl}}&liveScoreVal={{liveScoreVal}}&liveScoreSk={{liveScoreSk}}&finalScoreTechnical={{finalScoreTechnical}}&finalScoreComponents={{finalScoreComponents}}&finalScoreDeduction={{finalScoreDeduction}}&segmentScore={{segmentScore}}&finalScore={{finalScore}}&rank={{rank}}',
+            'online': 0
         }
 
         for key in values:
@@ -76,6 +78,8 @@ class Session:
         self.name = values['name']
         self.date = values['date']
         self.id = values['id']
+        self.display_url = values['display_url']
+        self.online = values['online']
 
     # record data to database
     def record(self):
@@ -86,7 +90,14 @@ class Session:
         exists = c.fetchone()
 
         if not exists:
-            c.execute('INSERT INTO `sessions` (`name`, `date`) VALUES (?,?)', (self.name, self.date))
+            c.execute('''INSERT INTO `sessions` 
+                (   
+                    `name`, 
+                    `date`,
+                    `display_url`,
+                    `online`
+                ) 
+                VALUES (?,?,?,?)''', (self.name, self.date, self.display_url, self.online))
 
             # get last id
             c.execute('SELECT `id` FROM `sessions` ORDER BY `id` DESC LIMIT 1')
@@ -95,7 +106,19 @@ class Session:
             self.id = res[0]
 
         else:
-            c.execute('UPDATE `sessions` SET `name` = ?, `date` = ? WHERE `id` = ?', (self.name, self.date, self.id))
+            c.execute('''UPDATE `sessions` SET 
+                    `name` = ?, 
+                    `date` = ?,
+                    `display_url` = ?,
+                    `online` = ?
+                WHERE `id` = ?''', 
+                (
+                    self.name, 
+                    self.date, 
+                    self.display_url, 
+                    self.online, 
+                    self.id
+                ))
 
         self.conn.commit()
 
@@ -104,7 +127,9 @@ class Session:
         data = {
             'id': self.id,
             'name': self.name,
-            'date': self.date
+            'date': self.date,
+            'display_url': self.display_url,
+            'online': self.online
         }
 
         return data
@@ -183,7 +208,9 @@ class Session:
             (`id` INTEGER PRIMARY KEY AUTOINCREMENT,
             `name` TEXT,
             `date` TEXT,
-            `lock` INTEGER)''')
+            `lock` INTEGER,
+            `display_url` TEXT,
+            `online` INTEGER)''')
 
         c.execute("PRAGMA table_info(`sessions`)")
         fields = c.fetchall()
@@ -196,7 +223,9 @@ class Session:
         fields = {
             'name': 'TEXT',
             'date': 'TEXT',
-            'lock': 'INTEGER'
+            'lock': 'INTEGER',
+            'display_url': 'TEXT',
+            'online': 'INTEGER'
         }
 
         for field, type in fields.items():

@@ -30,6 +30,7 @@ import tools
 
 from apps.box_element import *
 from apps.result_program import *
+from apps.session_config import *
 
 from apps.scrolled_frame import *
 
@@ -364,17 +365,31 @@ class RollartApp:
             label_session = Label(session_frame, text=self.session.name, font=("sans-serif", 12, 'bold'), bg="#0a1526", fg="white")
             label_session.pack(pady=10)
 
+            self.sessionLabel = label_session
+
+            frame = Frame(session_frame, bg="#0a1526")
+
+            frame.grid_columnconfigure(0, weight=1)
+            frame.grid_columnconfigure(1, weight=1)
+
+            sessionConfigApp = SessionConfigApp(self)
+
+            session_cfg = Button(frame, text="Config. session", font=("sans-serif", 12), command=sessionConfigApp.open_window)
+            session_cfg.grid(row=0, column=0, padx=5, sticky="nsew")
+
             sessionAction = partial(sessionApp.close_session, self.session)
 
-            sessions_db_btn = Button(session_frame, text="Close session", font=("sans-serif", 12), bg="#cf362b", fg="white", command=sessionAction)
-            sessions_db_btn.pack(pady=5, fill=X)
+            sessions_db_btn = Button(frame, text="Close", font=("sans-serif", 12), bg="#cf362b", fg="white", command=sessionAction)
+            sessions_db_btn.grid(row=0, column=1, padx=5, sticky="nsew")
+
+            frame.pack(pady=5, fill=X)
 
         # No session is started, we propose to open or create a new one
         else:
             sessionAction = partial(sessionApp.open_window)
 
             sessions_db_btn = Button(session_frame, text="Open session", font=("sans-serif", 12), bg="#dfe7e8", command=sessionAction)
-            sessions_db_btn.pack(pady=5, fill=X)
+            sessions_db_btn.pack(pady=5, fill=X, padx=5)
         # End of session statement
 
         session_frame.pack(pady=15, fill=X)
@@ -397,14 +412,14 @@ class RollartApp:
             form_frame = Frame(menu_frame, bg="#0a1526")
 
             skater_label = Label(form_frame, text="Skater", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
-            skater_label.grid(row=0, column=0, sticky="nw")
+            skater_label.grid(row=0, column=0, sticky="nw", padx=5)
             self.skater_entry = Entry(form_frame, font=('sans-serif', 10), borderwidth=1, relief='flat')
-            self.skater_entry.grid(row=1, column=0, sticky="nesw", ipadx=5, ipady=5)
+            self.skater_entry.grid(row=1, column=0, sticky="nesw", ipadx=5, ipady=5, padx=5)
 
             program_label = Label(form_frame, text="Program", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
-            program_label.grid(row=0, column=1, sticky="nw")
+            program_label.grid(row=0, column=1, sticky="nw", padx=5)
             self.program_entry = Entry(form_frame, font=('sans-serif', 10), borderwidth=1, relief='flat')
-            self.program_entry.grid(row=1, column=1, sticky="nesw", ipadx=5, ipady=5)
+            self.program_entry.grid(row=1, column=1, sticky="nesw", ipadx=5, ipady=5, padx=5)
 
             form_frame.pack(pady=5, expand=YES)
 
@@ -417,7 +432,7 @@ class RollartApp:
         # End of check session statement
 
         start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=actionStart)
-        start_btn.pack(pady=10, fill=X)
+        start_btn.pack(pady=10, fill=X, padx=5)
 
         # End of START OPTIONS
         #
@@ -433,10 +448,10 @@ class RollartApp:
             categoryApp = CategoryApp(self)
 
             btn = Button(menu_frame, text="Categories", font=("sans-serif", 12), bg="#dfe7e8", command=categoryApp.open_window)
-            btn.pack(pady=5, fill=X)
+            btn.pack(pady=5, fill=X, padx=5)
 
             btn = Button(menu_frame, text="Skaters", font=("sans-serif", 12), bg="#dfe7e8", command=self.skater_database)
-            btn.pack(pady=5, fill=X)
+            btn.pack(pady=5, fill=X, padx=5)
         # End of session check statement
 
         # End of skaters and categories
@@ -450,7 +465,7 @@ class RollartApp:
         label.pack(pady=10)
 
         elements_db_btn = Button(menu_frame, text="Elements database", font=("sans-serif", 12), bg="#dfe7e8", command=elements_database.open_window)
-        elements_db_btn.pack(pady=5, fill=X)
+        elements_db_btn.pack(pady=5, fill=X, padx=5)
 
         # TODO : this section has some bugs and has been disabled
         # types_db_btn = Button(menu_frame, text="Types database", font=("sans-serif", 12), bg="#dfe7e8", command=types_database.open_window)
@@ -665,18 +680,22 @@ class RollartApp:
         #
         # SERVER EXCHANGE
         # We send information about the current skater to a HTTP server for a realtime name and results display
-        skaterTeam = ''
+        # Server is available only for session competition with online checked
+        online = False
 
-        # If we use session, we add team name
-        if self.program.session and self.program.skater_id:
+        if self.session:
+            if self.session.online:
+                online = True
+        
+        if online:
+            skaterTeam = ''
+
             skater = Skater(self.program.skater_id)
-            skaterTeam = skater.team
-        # End of session statement
+            skaterTeam = urllib.parse.quote_plus(skater.team)
 
-        skaterName = urllib.parse.quote_plus(self.program.skater)
-
-        url = 'https://www.raiv.fr/wintercup2020/data.php?skaterName='+skaterName+'&skaterTeam='+skaterTeam+'&liveScoreEl=-&liveScoreVal=0.0&liveScoreSk=0.0&finalScoreTechnical=0.0&finalScoreComponents=0.0&finalScoreDeduction=0.0&segmentScore=0.0&finalScore=0.0&rank=0'
-        urllib.request.urlopen(url)
+            skaterName = urllib.parse.quote_plus(self.program.skater)
+            url = self.session.display_url+'?skaterName='+skaterName+'&skaterTeam='+skaterTeam+'&liveScoreEl=-&liveScoreVal=0.0&liveScoreSk=0.0&finalScoreTechnical=0.0&finalScoreComponents=0.0&finalScoreDeduction=0.0&segmentScore=0.0&finalScore=0.0&rank=0'
+            urllib.request.urlopen(url)
         # End of SERVER EXCHANGE
         #
 
@@ -736,23 +755,27 @@ class RollartApp:
         #
         # SERVER EXCHANGE
         # We send information about the current skater to a HTTP server for a realtime name and results display
-        rank = 1
-        teamScore = 0
-        team = 'team'
+        # Server is available only for session competition with online checked
+        online = False
+
+        if self.session:
+            if self.session.online:
+                online = True
         
-        # If session is opened, we get the current rank of the skater in the category and calculate
-        # team score
-        if self.program.session:
+        if online:
+            rank = 1
+            teamScore = 0
+            team = 'team'
+
             rank = self.program.getRank()
 
             skater = Skater(self.program.skater_id)
 
             teamScore = skater.getTeamScore()
-            team = 'team'+skater.team
-        # End of check session statement
+            team = urllib.parse.quote_plus(skater.team)
 
-        url = 'https://www.raiv.fr/wintercup2020/data.php?liveScoreSk='+str(self.program.total_score)+'&finalScoreTechnical='+str(self.program.technical_score)+'&finalScoreComponents='+str(self.program.components_score)+'&finalScoreDeduction='+str(self.program.penalization)+'&segmentScore='+str(self.program.score)+'&finalScore='+str(self.program.total_score)+'&rank='+str(rank)+'&'+team+'='+str(teamScore)
-        urllib.request.urlopen(url)
+            url = self.session.display_url+'?liveScoreSk='+str(self.program.total_score)+'&finalScoreTechnical='+str(self.program.technical_score)+'&finalScoreComponents='+str(self.program.components_score)+'&finalScoreDeduction='+str(self.program.penalization)+'&segmentScore='+str(self.program.score)+'&finalScore='+str(self.program.total_score)+'&rank='+str(rank)+'&'+team+'='+str(teamScore)
+            urllib.request.urlopen(url)
 
         # End of SERVER EXCHANGE
         #
