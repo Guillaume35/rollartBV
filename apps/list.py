@@ -176,7 +176,8 @@ class ListApp:
             self.header.append(Label(self.table_frame, text=self.labels[i]['label'], font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white",  borderwidth=1, relief="groove"))
             self.header[i].grid(row=0, column=i, sticky="nesw")
 
-            self.entries[0].append(Entry(self.table_frame, width=width, font=(font, 10), borderwidth=1, relief='flat'))
+            entry = Entry(self.table_frame, width=width, font=(font, 10), borderwidth=1, relief='flat')
+            self.entries[0].append(entry)
 
             if 'value' in self.labels[i].keys():
                 self.entries[0][i].insert(END, self.labels[i]['value'])

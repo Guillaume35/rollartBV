@@ -65,7 +65,7 @@ class SkaterApp:
         self.window = Tk()
 
         # Customizing self.window
-        self.window.title("Skaters database - Category "+self.category.name+" - RollArt BV")
+        self.window.title("Skaters database - Category "+self.category.name+" "+self.category.type+" - RollArt BV")
         self.window.geometry("1600x720")
         self.window.minsize(1280,360)
         self.window.config(background="#0a1526")
@@ -80,7 +80,7 @@ class SkaterApp:
 
         data = c.fetchall()
 
-        list = ListApp(window=self.window, title="Skaters database - Category "+self.category.name, data=data, labels=labels, className=Skater, default=default)
+        list = ListApp(window=self.window, title="Skaters database - Category "+self.category.name+" "+self.category.type, data=data, labels=labels, className=Skater, default=default)
         list.display()
 
         # display window

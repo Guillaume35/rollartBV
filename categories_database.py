@@ -25,11 +25,66 @@ import tools
 
 class CategoryApp:
 
+    """
+    * Application for category creation and configuration.
+    * First manager has to configure a categoy with a name and type.
+    * Then, config button is available to toggle programs and components coef
+    * depending on category type (FREESKATING, SOLO DANCE...)
+    """
+
     def __init__(self, parent):
         self.parent = parent
         self.window = None
+        self.frame = None
+        self.category = None
+
+        self.shortVar = None
+        self.longVar = None
+        self.shortCompoEntry = None
+        self.longCompoEntry = None
+
+        self.compulsory1Var = None
+        self.compulsory2Var = None
+        self.style_danceVar = None
+        self.free_danceVar = None
+        self.compulsoryCompoEntry = None
+        self.style_danceCompoEntry = None
+        self.free_danceCompoEntry = None
 
     def open_window(self):
+
+        # Create main window
+        self.window = Tk()
+
+        # Customizing self.window
+        self.window.title("Categories database - RollArt BV")
+        self.window.geometry("1600x720")
+        self.window.minsize(1280,360)
+        self.window.config(background="#0a1526")
+
+        self.list()
+
+        # display window
+        self.window.mainloop()
+
+    #
+    # list()
+    # Load categories list and basic configuration options
+    def list(self):
+
+        # clear root window
+        for c in self.window.winfo_children():
+            c.destroy()
+
+        home_path = str(Path.home())
+        db_path = home_path + '/.rollartBV/structure.db'
+
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute("SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order`, `id` ASC", (self.parent.session.id,))
+
+        data = c.fetchall()
 
         labels = [
             {
@@ -43,24 +98,18 @@ class CategoryApp:
                 'font': 'sans-serif'
             },
             {
-                'var': 'short',
-                'label': 'Short coef',
-                'value': 0.0
-            },
+                'var': 'type',
+                'label': 'Type',
+                'value': 'FREESKATING',
+                'type': 'OptionMenu',
+                'options': ('FREESKATING', 'SOLO DANCE')
+            }
+        ]
+
+        actions = [
             {
-                'var': 'long',
-                'label': 'Long coef',
-                'value': 1.0
-            },
-            {
-                'var': 'short_components',
-                'label': 'Short comp. coef',
-                'value': 1.0
-            },
-            {
-                'var': 'long_components',
-                'label': 'Long comp. coef',
-                'value': 1.0
+                'label': 'Config',
+                'action': self.config
             }
         ]
 
@@ -68,27 +117,231 @@ class CategoryApp:
             'session': self.parent.session.id
         }
 
-        # Create main window
-        self.window = Tk()
-
-        # Customizing self.window
-        self.window.title("Categories database - RollArt BV")
-        self.window.geometry("1600x720")
-        self.window.minsize(1280,360)
-        self.window.config(background="#0a1526")
-
-        home_path = str(Path.home())
-        db_path = home_path + '/.rollartBV/structure.db'
-
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        c.row_factory = tools.dict_factory
-        c.execute("SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order`, `id` ASC", (self.parent.session.id,))
-
-        data = c.fetchall()
-
-        list = ListApp(window=self.window, title="Categories database", data=data, labels=labels, className=Category, default=default)
+        list = ListApp(window=self.window, title="Categories database", data=data, labels=labels, className=Category, default=default, actions=actions)
         list.display()
+    # End of list()
 
-        # display window
-        self.window.mainloop()
+
+    #
+    # config(category = Dict)
+    # Load configuration panel in window. This configuration panel should show the interface 
+    # depending on the category global configuration : freeskating, solo dance, couple dance, pairs...
+    def config(self, category):
+        
+        # clear root window
+        for c in self.window.winfo_children():
+            c.destroy()
+
+        self.frame = Frame(self.window, bg="#0a1526")
+
+        self.category = Category(category)
+
+        # Title frame
+
+        title_frame = Frame(self.frame, bg="#bd3800")
+
+        btn = Button(title_frame, text="Cancel", font=("sans-serif", 12), command=self.list)
+        btn.grid(row=0, column=0, sticky="nsew")
+
+        # check category type
+        if not self.category.type:
+            self.category.type = 'FREESKATING'
+
+        label = Label(title_frame, text=self.category.name+" ("+self.category.type+")", font=("sans-serif", 14), fg="white", bg="#bd3800")
+        label.grid(row=0, column=1, sticky="nsw", padx="10")
+
+        btn = Button(title_frame, text="Save", font=("sans-serif", 12), bg="green", fg="white", command=self.record)
+        btn.grid(row=0, column=2, sticky="nsew")
+
+        Grid.columnconfigure(title_frame, 1, weight=1)
+
+        title_frame.pack(fill=X)
+
+        # Form depending on which competition type is selected
+        frame = Frame(self.frame, bg="#0a1526")
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(1, weight=1)
+
+        label = Label(frame, text="Option", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label.grid(row=0, column=0, pady=10, sticky="w")
+
+        label = Label(frame, text="Components coef", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label.grid(row=0, column=1, pady=10, sticky="w")
+
+        # FREESKATING has the following options
+        # - short program
+        # - long program
+        if self.category.type == "FREESKATING":
+            
+            # short program
+            self.shortVar = IntVar()
+
+            if self.category.short:
+                self.shortVar.set(1)
+
+            ck = Checkbutton(frame, text="Short program", variable=self.shortVar, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.shortVar, ck))
+            if int(self.shortVar.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=1, column=0, pady=10, sticky="nsew")
+
+            entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
+            entry.insert(0, self.category.short_components)
+            entry.grid(row=1, column=1, pady=10, sticky="nsew")
+            self.shortCompoEntry = entry
+
+            # long program
+            self.longVar = IntVar()
+
+            if self.category.long:
+                self.longVar.set(1)
+
+            ck = Checkbutton(frame, text="Long program", variable=self.longVar, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.longVar, ck))
+            if int(self.longVar.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=2, column=0, pady=10, sticky="nsew")
+
+            entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
+            entry.insert(0, self.category.long_components)
+            entry.grid(row=2, column=1, pady=10, sticky="nsew")
+            self.longCompoEntry = entry
+
+            # End FREESKATING config
+        
+        # SOLO DANCE has the following options
+        # - compulsory 1
+        # - compulsory 2
+        # - style dance
+        # - free dance
+        elif self.category.type == "SOLO DANCE":
+
+            # Compulsory dance 1
+            self.compulsory1Var = IntVar()
+
+            if self.category.compulsory1:
+                self.compulsory1Var.set(1)
+
+            ck = Checkbutton(frame, text="Compulsory Dance 1", variable=self.compulsory1Var, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.compulsory1Var, ck))
+            if int(self.compulsory1Var.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=1, column=0, pady=10, sticky="nsew")
+
+            # Compulsory dance 2
+            self.compulsory2Var = IntVar()
+
+            if self.category.compulsory2:
+                self.compulsory2Var.set(1)
+
+            ck = Checkbutton(frame, text="Compulsory Dance 2", variable=self.compulsory2Var, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.compulsory2Var, ck))
+            if int(self.compulsory2Var.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=2, column=0, pady=10, sticky="nsew")
+
+            # same compulsory components for all dances
+            entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
+            entry.insert(0, self.category.compulsory_components)
+            entry.grid(row=1, column=1, rowspan=2, pady=10, sticky="nsew")
+            self.compulsoryCompoEntry = entry
+
+            # style dance
+            self.style_danceVar = IntVar()
+
+            if self.category.style_dance:
+                self.style_danceVar.set(1)
+
+            ck = Checkbutton(frame, text="Style dance", variable=self.style_danceVar, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.style_danceVar, ck))
+            if int(self.style_danceVar.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=3, column=0, pady=10, sticky="nsew")
+
+            entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
+            entry.insert(0, self.category.style_dance_components)
+            entry.grid(row=3, column=1, pady=10, sticky="nsew")
+            self.style_danceCompoEntry = entry
+
+            # free dance
+            self.free_danceVar = IntVar()
+
+            if self.category.free_dance:
+                self.free_danceVar.set(1)
+
+            ck = Checkbutton(frame, text="Free dance", variable=self.free_danceVar, anchor='w', pady=10)
+            ck.configure(command=partial(self.toggleCk, self.free_danceVar, ck))
+            if int(self.free_danceVar.get()):
+                ck.select()
+            else:
+                ck.deselect()
+            ck.grid(row=4, column=0, pady=10, sticky="nsew")
+
+            entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
+            entry.insert(0, self.category.free_dance_components)
+            entry.grid(row=4, column=1, pady=10, sticky="nsew")
+            self.free_danceCompoEntry = entry
+
+            # End SOLO DANCE config
+
+        frame.pack(fill=X, pady=10, padx=10)
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")
+    # End of config()
+
+
+    #
+    # toggleCk(var = tkinter.Var, ck = Checkbutton)
+    def toggleCk(self, var, ck):
+
+        if var.get():
+            ck.deselect()
+            var.set(0)
+        else:
+            ck.select()
+            var.set(1)
+    # End of toggleCk()
+
+
+    # 
+    # record()
+    # Record opened category configuration
+    def record(self):
+
+        # 
+        # Case FREESKATING
+        if self.category.type == "FREESKATING":
+            self.category.short = float(self.shortVar.get())
+            self.category.long = float(self.longVar.get())
+            self.category.short_components = float(self.shortCompoEntry.get())
+            self.category.long_components = float(self.longCompoEntry.get())
+            # end of case FREESKATING
+
+        # Case SOLO DANCE
+        elif self.category.type == "SOLO DANCE":
+            self.category.compulsory1 = float(self.compulsory1Var.get())
+            self.category.compulsory2 = float(self.compulsory2Var.get())
+            self.category.style_dance = float(self.style_danceVar.get())
+            self.category.free_dance = float(self.free_danceVar.get())
+            self.category.compulsory_components = float(self.compulsoryCompoEntry.get())
+            self.category.style_dance_components = float(self.style_danceCompoEntry.get())
+            self.category.free_dance_components = float(self.free_danceCompoEntry.get())
+            # end of case SOLO DANCE
+
+        self.category.record()
+
+        self.list()
+    # End of record()

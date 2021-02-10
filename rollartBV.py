@@ -222,7 +222,7 @@ class RollartApp:
         for category in categories:
 
             # Category label includes category name and number of skaters.
-            label = Label(frame, text=category.name+ ' ('+str(category.getSkatersNum())+')', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=10)
+            label = Label(frame, text=category.type+' '+category.name+ ' ('+str(category.getSkatersNum())+' skaters)', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=10)
             label.grid(row=i, column=0, sticky="nesw", ipadx=10, ipady=10)
 
             # Button START has the same callback function even for short and long program.
@@ -231,46 +231,149 @@ class RollartApp:
             # computer breakpoint (if so).
             actionStart = partial(self.resume_category, category)
 
+            # Dance is currently in developpment
+            if category.type == 'SOLO DANCE':
+                actionStart = partial(messagebox.showinfo, title="Can't start", message="Sorry, dance competition is not ready. You should upgrade as soon as it development is over.")
+
+            cols = [None, None, None, None, None]
+
             # If short program
-            if category.short > 0:
+            if category.type == 'FREESKATING' and category.short > 0:
                 
                 # Short program can be "UNSTARTED" or running ("SHORT"). All other status value 
                 # is concidered as short program end so we can display the results button (else statement)
-                if str(category.status).upper() == 'UNSTARTED' or str(category.status).upper() == 'SHORT' or not category.status:
+                if category.status in ['UNSTARTED', 'SHORT']:
                     btn = Button(frame, text="Start short", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
                 
                 # Short program ended
                 else:
-
                     action = partial(self.results, category, 'short')
                     btn = Button(frame, text="Short results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
                 # End of ended statement
+
+                cols[3] = True
             # End of if short program
 
             # If long program
-            if category.long > 0:
+            if category.type == 'FREESKATING' and category.long > 0:
                 # Long program can be running ("LONG") or ended ("END"). If there is no short program defined 
                 # in the category, status can be nothing or END.
-                if str(category.status).upper() == 'LONG' or (category.short <= 0 and str(category.status).upper() != 'END'):
+                if category.status == 'LONG' or (category.short <= 0 and category.status != 'END'):
                     btn = Button(frame, text="Start long", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
                 
                 # If long program is END, we propose the results
-                elif str(category.status).upper() == 'END':
+                elif category.status == 'END':
                     action = partial(self.results, category, 'long')
                     btn = Button(frame, text="Long results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
 
                 # In case of short program which is not over in the category, we show a WAIT button for 
                 # the long program that indicate short program must be finished first.
                 else:
                     actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish short program first")
                     btn = Button(frame, text="Wait long", font=("sans-serif", 12), command=actionWait)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
                 # End of program status statement
+
+                cols[4] = True
             # End of if long program
+
+            # If compuslory dance 1
+            if category.type == "SOLO DANCE" and category.compulsory1 > 0:
+                # Compulsory1 can be "UNSTARTED" or running ("COMPULSORY1"). All other status value
+                # is concidered as compulsory1 end so we can display result button
+                if category.status in ['UNSTARTED', 'COMPULSORY1']:
+                    btn = Button(frame, text="Start Comp. 1", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+                
+                # Compulsory1 ended
+                else:
+                    action = partial(self.results, category, 'compulsory1')
+                    btn = Button(frame, text="Comp. 1 results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
+                # End of compulsory status statement
+
+                cols[1] = True
+            # End of compulsory 1 statement
+
+            # If compuslory dance 2
+            if category.type == "SOLO DANCE" and category.compulsory2 > 0:
+                # We concider compulsory dance started if the status is "COMPULSORY2".
+                if category.status == 'COMPULSORY2':
+                    btn = Button(frame, text="Start Comp. 2", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+
+                # If status is COMPULSORY1, UNSTARTED or nothing, we concider not possible to start compulsory 2
+                elif category.status in ['COMPULSORY1', 'UNSTARTED']:
+                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory 1 first")
+                    btn = Button(frame, text="Wait comp. 2", font=("sans-serif", 12), command=actionWait)
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                
+                # Compulsory2 ended
+                else:
+                    action = partial(self.results, category, 'compulsory2')
+                    btn = Button(frame, text="Comp. 2 results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
+                # End of compulsory status statement
+
+                cols[2] = True
+            # End of compulsory 2 statement
+
+            # If style dance
+            if category.type == "SOLO DANCE" and category.style_dance > 0:
+                # We concider style dance started if the status is "STYLE_DANCE".
+                if category.status == 'STYLE_DANCE':
+                    btn = Button(frame, text="Start Style", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
+
+                # If status is COMPULSORY1, COMPULSORY2 UNSTARTED or nothing, we concider not possible to style dance
+                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'UNSTARTED']:
+                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory first")
+                    btn = Button(frame, text="Wait style", font=("sans-serif", 12), command=actionWait)
+                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
+                
+                # Style dance ended
+                else:
+                    action = partial(self.results, category, 'style_dance')
+                    btn = Button(frame, text="Style results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
+                # End of style dance status statement
+
+                cols[3] = True
+            # End of style dance statement
+
+            # If free dance
+            if category.type == "SOLO DANCE" and category.free_dance > 0:
+                # We concider free dance started if the status is "FREE_DANCE".
+                if category.status == 'FREE_DANCE':
+                    btn = Button(frame, text="Start Free", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
+
+                # If status is COMPULSORY1, COMPULSORY2, STYLE_DANCE, UNSTARTED or nothing, we concider not possible to start free dance
+                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'STYLE_DANCE', 'UNSTARTED']:
+                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish previous dance first")
+                    btn = Button(frame, text="Wait free", font=("sans-serif", 12), command=actionWait)
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
+                
+                # Free dance ended
+                else:
+                    action = partial(self.results, category, 'free_dance')
+                    btn = Button(frame, text="Free results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
+                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
+                # End of free dance status statement
+
+                cols[4] = True
+            # End of free dance statement
+
+            # put a grid on empty places
+            for coli in range(1,4):
+                if not cols[coli]:
+                    label = Label(frame, text='', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12))
+                    label.grid(row=i, column=coli, sticky="nesw")
+            # End of grid on empty places
 
             i += 1
         # End of for each categories
@@ -914,7 +1017,7 @@ class RollartApp:
 
             skaterApp = SkaterApp(self, category)
 
-            btn = Button(scrollFrameIn, text=category.name, font=("sans-serif", 12), command=skaterApp.open_window, pady=8)
+            btn = Button(scrollFrameIn, text=category.name+' ('+category.type+')', font=("sans-serif", 12), command=skaterApp.open_window, pady=8)
             btn.pack(fill=X, pady=8)
         # End of categories loop
 
