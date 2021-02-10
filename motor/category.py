@@ -428,9 +428,10 @@ class Category:
                 print ("Add "+field+" "+type+" to table")
                 c.execute("ALTER TABLE `categories` ADD COLUMN '%s' '%s'" % (field, type))
 
-                # Set type of all created categories to FREESKATING
-                if field == 'type':
-                    print ("Make all categories types to FREESKATING (compatibility issue)")
-                    c.execute("UPDATE `categories` SET `type` = 'FREESKATING'")
+                # # Set type of all created categories to FREESKATING
+                # # There is a bug here
+                # if field == 'type':
+                #    print ("Make all categories types to FREESKATING (compatibility issue)")
+                #    c.execute("UPDATE `categories` SET `type` = 'FREESKATING'")
 
         conn.close()
