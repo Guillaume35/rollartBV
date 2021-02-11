@@ -134,6 +134,9 @@ class Category:
             'compulsory2': 0.0,
             'style_dance': 0.0,
             'free_dance': 0.0,
+            'compulsory1_pattern': None,
+            'compulsory2_pattern': None,
+            'style_dance_pattern': None,
             'short_components': 1.0,
             'long_components': 1.0,
             'compulsory_components': 1.0,
@@ -158,6 +161,9 @@ class Category:
         self.compulsory2 = values['compulsory2']
         self.style_dance = values['style_dance']
         self.free_dance = values['free_dance']
+        self.compulsory1_pattern = values['compulsory1_pattern']
+        self.compulsory2_pattern = values['compulsory2_pattern']
+        self.style_dance_pattern = values['style_dance_pattern']
         self.short_components = values['short_components']
         self.long_components = values['long_components']
         self.compulsory_components = values['compulsory_components']
@@ -186,6 +192,9 @@ class Category:
                     `compulsory2`,
                     `style_dance`,
                     `free_dance`,
+                    `compulsory1_pattern`,
+                    `compulsory2_pattern`,
+                    `style_dance_pattern`,
                     `short_components`,
                     `long_components`,
                     `compulsory_components`,
@@ -193,7 +202,7 @@ class Category:
                     `free_dance_components`,
                     `status`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.name, 
                     self.order, 
@@ -205,6 +214,9 @@ class Category:
                     self.compulsory2, 
                     self.style_dance, 
                     self.free_dance, 
+                    self.compulsory1_pattern, 
+                    self.compulsory2_pattern, 
+                    self.style_dance_pattern, 
                     self.short_components, 
                     self.long_components,
                     self.compulsory_components,
@@ -230,6 +242,9 @@ class Category:
                             `compulsory2` = ?,
                             `style_dance` = ?,
                             `free_dance` = ?,
+                            `compulsory1_pattern` = ?,
+                            `compulsory2_pattern` = ?,
+                            `style_dance_pattern` = ?,
                             `short_components` = ?,
                             `long_components` = ?,
                             `compulsory_components` = ?,
@@ -249,6 +264,9 @@ class Category:
                         self.compulsory2, 
                         self.style_dance, 
                         self.free_dance, 
+                        self.compulsory1_pattern, 
+                        self.compulsory2_pattern, 
+                        self.style_dance_pattern, 
                         self.short_components, 
                         self.long_components, 
                         self.compulsory_components, 
@@ -274,6 +292,9 @@ class Category:
             'compulsory2': self.compulsory2,
             'style_dance': self.style_dance,
             'free_dance': self.free_dance,
+            'compulsory1_pattern': self.compulsory1_pattern,
+            'compulsory2_pattern': self.compulsory2_pattern,
+            'style_dance_pattern': self.style_dance_pattern,
             'short_components': self.short_components,
             'long_components': self.long_components,
             'compulsory_components': self.compulsory_components,
@@ -387,6 +408,9 @@ class Category:
             `compulsory2` REAL,
             `style_dance` REAL,
             `free_dance` REAL,
+            `compulsory1_pattern` TEXT,
+            `compulsory2_pattern` TEXT,
+            `style_dance_pattern` TEXT,
             `short_components` REAL,
             `long_components` REAL,
             `compulsory_components` REAL,
@@ -413,6 +437,9 @@ class Category:
             'compulsory2': 'REAL',
             'style_dance': 'REAL',
             'free_dance': 'REAL',
+            'compulsory1_pattern': 'TEXT',
+            'compulsory2_pattern': 'TEXT',
+            'style_dance_pattern': 'TEXT',
             'short_components': 'REAL',
             'long_components': 'REAL',
             'compulsory_components': 'REAL',

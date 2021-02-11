@@ -68,7 +68,7 @@ class RollartApp:
         # Customizing window
         self.window.title("RollArt Unchained")
 
-        dir_path = os.path.dirname(os.path.realpath(__file__))
+        dir_path = os.path.dirname(sys.argv[0])
 
         self.window.iconphoto(True, PhotoImage(file=dir_path+'/assets/icon-512.png'))
 

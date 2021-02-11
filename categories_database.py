@@ -52,6 +52,7 @@ class CategoryApp:
         self.free_danceCompoEntry = None
         self.compulsory1DanceVar = None
         self.compulsory2DanceVar = None
+        self.style_dancePatternVar = None
 
     def open_window(self):
 
@@ -232,7 +233,7 @@ class CategoryApp:
             ck.grid(row=1, column=0, pady=10, sticky="nsew")
 
             self.compulsory1DanceVar = StringVar()
-            self.compulsory1DanceVar.set(patterns[0])
+            self.compulsory1DanceVar.set(self.category.compulsory1_pattern)
             om = OptionMenu(frame, self.compulsory1DanceVar, *patterns)
             om.configure(anchor="w")
             om.grid(row=1, column=1, pady=10, sticky="nsew")
@@ -247,7 +248,7 @@ class CategoryApp:
             ck.grid(row=2, column=0, pady=10, sticky="nsew")
 
             self.compulsory2DanceVar = StringVar()
-            self.compulsory2DanceVar.set(patterns[0])
+            self.compulsory2DanceVar.set(self.category.compulsory2_pattern)
             om = OptionMenu(frame, self.compulsory2DanceVar, *patterns)
             om.configure(anchor="w")
             om.grid(row=2, column=1, pady=10, sticky="nsew")
@@ -265,7 +266,13 @@ class CategoryApp:
                 self.style_danceVar.set(1)
 
             ck = Checkbutton(frame, text="Style dance", variable=self.style_danceVar, anchor='w', pady=10)
-            ck.grid(row=3, column=0, pady=10, columnspan=2, sticky="nsew")
+            ck.grid(row=3, column=0, pady=10, sticky="nsew")
+
+            self.style_dancePatternVar = StringVar()
+            self.style_dancePatternVar.set(self.category.style_dance_pattern)
+            om = OptionMenu(frame, self.style_dancePatternVar, *patterns)
+            om.configure(anchor="w")
+            om.grid(row=3, column=1, pady=10, sticky="nsew")
 
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
             entry.insert(0, self.category.style_dance_components)
@@ -320,6 +327,9 @@ class CategoryApp:
             self.category.compulsory_components = float(self.compulsoryCompoEntry.get())
             self.category.style_dance_components = float(self.style_danceCompoEntry.get())
             self.category.free_dance_components = float(self.free_danceCompoEntry.get())
+            self.category.compulsory1_pattern = self.compulsory1DanceVar.get()
+            self.category.compulsory2_pattern = self.compulsory2DanceVar.get()
+            self.category.style_dance_pattern = self.style_dancePatternVar.get()
             # end of case SOLO DANCE
 
         # Check if something is started in this category.
