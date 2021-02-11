@@ -82,7 +82,7 @@ class CategoryApp:
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
         c.row_factory = tools.dict_factory
-        c.execute("SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order`, `id` ASC", (self.parent.session.id,))
+        c.execute("SELECT * FROM `categories` WHERE `session` = ? ORDER BY `order` ASC, `id` ASC", (self.parent.session.id,))
 
         data = c.fetchall()
 

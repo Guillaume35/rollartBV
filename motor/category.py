@@ -378,7 +378,7 @@ class Category:
         c.execute('''CREATE TABLE IF NOT EXISTS `categories`
             (`id` INTEGER PRIMARY KEY AUTOINCREMENT,
             `name` TEXT,
-            `order` TEXT,
+            `order` INTEGER,
             `session` INTEGER,
             `type` TEXT,
             `short` REAL,
@@ -404,7 +404,7 @@ class Category:
 
         fields = {
             'name': 'TEXT',
-            'order': 'TEXT',
+            'order': 'INTEGER',
             'session': 'INTEGER',
             'type': 'TEXT',
             'short': 'REAL',
