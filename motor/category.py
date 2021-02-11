@@ -311,8 +311,6 @@ class Category:
         
         if q:
             data = c.fetchone()
-
-            print(self.id)
             
             if data:
                 return Skater(data)

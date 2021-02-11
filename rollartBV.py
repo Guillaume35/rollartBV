@@ -369,7 +369,7 @@ class RollartApp:
             # End of free dance statement
 
             # put a grid on empty places
-            for coli in range(1,4):
+            for coli in range(1,5):
                 if not cols[coli]:
                     label = Label(frame, text='', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12))
                     label.grid(row=i, column=coli, sticky="nesw")

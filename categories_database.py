@@ -341,6 +341,21 @@ class CategoryApp:
             self.category.free_dance_components = float(self.free_danceCompoEntry.get())
             # end of case SOLO DANCE
 
+        # Check if something is started in this category.
+        # If nothing is started, category status is set to unstarted
+
+        conn = tools.getDb()
+        c = conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute("SELECT COUNT(*) AS `num` FROM `skaters` WHERE `category` = ? AND `status` != 'unstarted'", (self.category.id,))
+        res = c.fetchone()
+
+        # unstarted
+        if not res['num']:
+            self.category.status = 'UNSTARTED'
+
+        # End of status check
+
         self.category.record()
 
         self.list()
