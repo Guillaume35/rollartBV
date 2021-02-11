@@ -63,10 +63,14 @@ class RollartApp:
 
     def __init__(self):
         # Create main window
-        self.window = Tk()
+        self.window = Tk(className="Rollart Unchained")
 
         # Customizing window
         self.window.title("RollArt Unchained")
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        self.window.iconphoto(True, PhotoImage(file=dir_path+'/assets/icon-512.png'))
 
         w = self.window.winfo_screenwidth()
         h = self.window.winfo_screenheight()

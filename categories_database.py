@@ -50,11 +50,13 @@ class CategoryApp:
         self.compulsoryCompoEntry = None
         self.style_danceCompoEntry = None
         self.free_danceCompoEntry = None
+        self.compulsory1DanceVar = None
+        self.compulsory2DanceVar = None
 
     def open_window(self):
 
         # Create main window
-        self.window = Tk()
+        self.window = Toplevel(self.parent.window) # Tk()
 
         # Customizing self.window
         self.window.title("Categories database - RollArt BV")
@@ -162,11 +164,19 @@ class CategoryApp:
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_columnconfigure(1, weight=1)
 
+        i = 0
+
         label = Label(frame, text="Option", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
-        label.grid(row=0, column=0, pady=10, sticky="w")
+        label.grid(row=0, column=i, pady=10, sticky="w")
+        i += 1
+
+        if self.category.type == "SOLO DANCE":
+            label = Label(frame, text="Pattern", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+            label.grid(row=0, column=i, pady=10, sticky="w")
+            i += 1
 
         label = Label(frame, text="Components coef", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
-        label.grid(row=0, column=1, pady=10, sticky="w")
+        label.grid(row=0, column=i, pady=10, sticky="w")
 
         # FREESKATING has the following options
         # - short program
@@ -180,11 +190,6 @@ class CategoryApp:
                 self.shortVar.set(1)
 
             ck = Checkbutton(frame, text="Short program", variable=self.shortVar, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.shortVar, ck))
-            if int(self.shortVar.get()):
-                ck.select()
-            else:
-                ck.deselect()
             ck.grid(row=1, column=0, pady=10, sticky="nsew")
 
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
@@ -199,11 +204,6 @@ class CategoryApp:
                 self.longVar.set(1)
 
             ck = Checkbutton(frame, text="Long program", variable=self.longVar, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.longVar, ck))
-            if int(self.longVar.get()):
-                ck.select()
-            else:
-                ck.deselect()
             ck.grid(row=2, column=0, pady=10, sticky="nsew")
 
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
@@ -212,13 +212,15 @@ class CategoryApp:
             self.longCompoEntry = entry
 
             # End FREESKATING config
-        
+
         # SOLO DANCE has the following options
         # - compulsory 1
         # - compulsory 2
         # - style dance
         # - free dance
         elif self.category.type == "SOLO DANCE":
+
+            patterns = ('Quickstep', 'Starlight', 'Harris Tango Solo', 'Harris Tango Couples', 'Tango Delanco', 'Midnight Blues', 'Fourteen Step', 'Rocker Foxtrot', 'Blues Pattern', 'Terenzi Pattern', 'Westminster Waltz', 'Viennese Waltz', 'Paso Doble Pattern', 'Argentine Tango Solo', 'Argentine Tango', 'Italian Foxtrot', 'Castel March', 'City Blues', 'Carlos Tango', 'Skaters March', 'La Vista Cha Cha', 'Canasta Tango', 'Denver Shuffle', 'Tudor Waltz', 'Easy Paso', 'Association Waltz', 'Killian', 'Shaken Samba', 'Tango Delancha', 'Tango Iceland', 'Loran Rumba', 'Golden Samba', 'Roller Samba Couples', 'Roller Samba Solo', 'Cha Cha Patin', 'Little Waltz Couples', 'Little Waltz Solo', 'Flirtation Waltz Solo', 'Federation Foxtrot Solo', 'Kent Tango Solo', 'Siesta Tango SandC', 'Swing Foxtrot Couple')
 
             # Compulsory dance 1
             self.compulsory1Var = IntVar()
@@ -227,12 +229,13 @@ class CategoryApp:
                 self.compulsory1Var.set(1)
 
             ck = Checkbutton(frame, text="Compulsory Dance 1", variable=self.compulsory1Var, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.compulsory1Var, ck))
-            if int(self.compulsory1Var.get()):
-                ck.select()
-            else:
-                ck.deselect()
             ck.grid(row=1, column=0, pady=10, sticky="nsew")
+
+            self.compulsory1DanceVar = StringVar()
+            self.compulsory1DanceVar.set(patterns[0])
+            om = OptionMenu(frame, self.compulsory1DanceVar, *patterns)
+            om.configure(anchor="w")
+            om.grid(row=1, column=1, pady=10, sticky="nsew")
 
             # Compulsory dance 2
             self.compulsory2Var = IntVar()
@@ -241,17 +244,18 @@ class CategoryApp:
                 self.compulsory2Var.set(1)
 
             ck = Checkbutton(frame, text="Compulsory Dance 2", variable=self.compulsory2Var, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.compulsory2Var, ck))
-            if int(self.compulsory2Var.get()):
-                ck.select()
-            else:
-                ck.deselect()
             ck.grid(row=2, column=0, pady=10, sticky="nsew")
+
+            self.compulsory2DanceVar = StringVar()
+            self.compulsory2DanceVar.set(patterns[0])
+            om = OptionMenu(frame, self.compulsory2DanceVar, *patterns)
+            om.configure(anchor="w")
+            om.grid(row=2, column=1, pady=10, sticky="nsew")
 
             # same compulsory components for all dances
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
             entry.insert(0, self.category.compulsory_components)
-            entry.grid(row=1, column=1, rowspan=2, pady=10, sticky="nsew")
+            entry.grid(row=1, column=2, rowspan=2, pady=10, sticky="nsew")
             self.compulsoryCompoEntry = entry
 
             # style dance
@@ -261,16 +265,11 @@ class CategoryApp:
                 self.style_danceVar.set(1)
 
             ck = Checkbutton(frame, text="Style dance", variable=self.style_danceVar, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.style_danceVar, ck))
-            if int(self.style_danceVar.get()):
-                ck.select()
-            else:
-                ck.deselect()
-            ck.grid(row=3, column=0, pady=10, sticky="nsew")
+            ck.grid(row=3, column=0, pady=10, columnspan=2, sticky="nsew")
 
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
             entry.insert(0, self.category.style_dance_components)
-            entry.grid(row=3, column=1, pady=10, sticky="nsew")
+            entry.grid(row=3, column=2, pady=10, sticky="nsew")
             self.style_danceCompoEntry = entry
 
             # free dance
@@ -280,16 +279,11 @@ class CategoryApp:
                 self.free_danceVar.set(1)
 
             ck = Checkbutton(frame, text="Free dance", variable=self.free_danceVar, anchor='w', pady=10)
-            ck.configure(command=partial(self.toggleCk, self.free_danceVar, ck))
-            if int(self.free_danceVar.get()):
-                ck.select()
-            else:
-                ck.deselect()
-            ck.grid(row=4, column=0, pady=10, sticky="nsew")
+            ck.grid(row=4, column=0, pady=10, columnspan=2, sticky="nsew")
 
             entry = Entry(frame, font=("monospace", 10), borderwidth=1, relief='flat')
             entry.insert(0, self.category.free_dance_components)
-            entry.grid(row=4, column=1, pady=10, sticky="nsew")
+            entry.grid(row=4, column=2, pady=10, sticky="nsew")
             self.free_danceCompoEntry = entry
 
             # End SOLO DANCE config
@@ -301,19 +295,6 @@ class CategoryApp:
 
         self.frame.grid(row=0, column=0, sticky="nesw")
     # End of config()
-
-
-    #
-    # toggleCk(var = tkinter.Var, ck = Checkbutton)
-    def toggleCk(self, var, ck):
-
-        if var.get():
-            ck.deselect()
-            var.set(0)
-        else:
-            ck.select()
-            var.set(1)
-    # End of toggleCk()
 
 
     # 
