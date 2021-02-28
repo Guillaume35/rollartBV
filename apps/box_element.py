@@ -28,10 +28,18 @@ from apps.jump_element import *
 from apps.choreo_element import *
 from apps.spin_element import *
 from apps.step_element import *
+from apps.pattern_element import *
+from apps.artistic_footwork_element import *
+from apps.cluster_element import *
+from apps.footwork_element import *
+from apps.traveling_element import *
 
 from motor.program import *
 from motor.program_element import *
 from motor.program_box import *
+from motor.category import *
+
+import tools
 
 #
 # BoxElement(box = ProgramBox, root = Frame, parent = Object) Class
@@ -52,6 +60,16 @@ class BoxElement():
         self.btnEdit = None
         self.btnDel = None
         self.readonly = False
+
+        if hasattr(self.parent, 'program'):
+            self.program = self.parent.program
+        else:
+            self.program = Program(self.box.program)
+
+        if hasattr(self.parent, 'category'):
+            self.category = self.parent.category
+        else:
+            self.category = Category(self.program.category)
 
     # 
     # wrapper(mode = String)
@@ -98,6 +116,8 @@ class BoxElement():
 
         self.frame.pack(fill=X)
 
+    # form()
+    # Display editing form
     def form(self):
 
         self.mode = 'form'
@@ -116,7 +136,27 @@ class BoxElement():
         Grid.rowconfigure(frame_types, 0, weight=1)
 
         # list elements types
-        btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
+        if self.program.program_name.upper() in ['SHORT', 'LONG']:
+            btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
+        elif self.program.program_name.upper() in ['COMPULSORY1', 'COMPULSORY2']:
+            patterns = tools.compulsoryPatterns()
+
+            if self.program.program_name.upper() == 'COMPULSORY1':
+                pat = self.category.compulsory1_pattern
+            else:
+                pat = self.category.compulsory2_pattern
+
+            pattern = patterns[pat]
+
+            btnLabels = []
+
+            for i in range(pattern[0]):
+                btnLabels.append('PatternSection'+str(i+1))
+        elif self.program.program_name.upper() == 'STYLE_DANCE':
+            btnLabels = ['Pattern', 'Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling']
+        elif self.program.program_name.upper() == 'FREE_DANCE':
+            btnLabels = ['Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling', 'Choreo']
+
         i = 0
 
         for btnLabel in btnLabels:
@@ -360,10 +400,11 @@ class BoxElement():
     def check(self, force=False):
         
         elements = self.box.getElements()
+        
+        # For solo element, data operator doesn't need to click on next element. It is auto confirmed.
+        if len(elements) and (self.box.type in ['SoloJump', 'SoloSpin', 'Choreo', 'Step', 'PatternSection1', 'PatternSection2', 'Pattern', 'Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling'] or force):
 
-        if len(elements) and (self.box.type == 'SoloJump' or self.box.type == 'SoloSpin' or self.box.type == 'Choreo' or self.box.type == 'Step' or force):
-
-            if len(elements) > 1 and (self.box.type == 'SoloJump' or self.box.type == 'SoloSpin' or self.box.type == 'Choreo' or self.box.type == 'Step'):
+            if len(elements) > 1 and (self.box.type in ['SoloJump', 'SoloSpin', 'Choreo', 'Step', 'PatternSection1', 'PatternSection2', 'Pattern', 'Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling']):
                 lastAdded = elements[-1]
                 self.box.empty()
                 lastAdded.record()
@@ -482,6 +523,21 @@ class BoxElement():
 
             elif (typeCode == 'Choreo'):
                 comp = ChoreoElement(element, frame, self)
+
+            elif (typeCode in ['PatternSection1', 'PatternSection2', 'Pattern']):
+                comp = PatternElement(element, frame, self)
+            
+            elif (typeCode == 'Footwork'):
+                comp = FootworkElement(element, frame, self)
+            
+            elif (typeCode == 'ArtisticFootwork'):
+                comp = ArtisticFootworkElement(element, frame, self)
+            
+            elif (typeCode == 'Cluster'):
+                comp = ClusterElement(element, frame, self)
+            
+            elif (typeCode == 'Traveling'):
+                comp = TravelingElement(element, frame, self)
                 
             if element.id:
                 comp.display()

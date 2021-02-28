@@ -311,24 +311,47 @@ class Category:
 
         c.row_factory = tools.dict_factory
 
-        if str(self.status).upper() == 'UNSTARTED' or not self.status:
-            if self.short > 0:
-                self.status = 'short'
-            else:
-                self.status = 'long'
-            
-            self.record()
-
-        if self.status.upper() == 'SHORT':
-            c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "shortend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
-            q = True
-        elif self.status.upper() == 'LONG':
-            if self.short > 0:
-                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "longend" ORDER BY `short_score`, `id` LIMIT 1', (self.id, ))
+        # FREESKATING case
+        if self.type == 'FREESKATING':
+            if self.status == 'SHORT':
+                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "shortend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
                 q = True
-            else:
-                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` != "longend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+            elif self.status == 'LONG':
+                if self.short > 0:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "longend" ORDER BY `short_score`, `id` LIMIT 1', (self.id, ))
+                else:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "longend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
                 q = True
+        # End of FREESKATING case
+        
+        # SOLO DANCE case
+        elif self.type == 'SOLO DANCE':
+            if self.status == 'COMPULSORY1':
+                c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "compulsory1end" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+                q = True
+            elif self.status == 'COMPULSORY2':
+                if self.compulsory1 > 0:
+                    # Folowing rule need to be applied :
+                    # skaters_number / 2. Group 2 goes first, group 1 goes second
+                    q = False
+                else:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "compulsory2end" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+                    q = True
+            elif self.status == 'STYLE_DANCE':
+                if self.compulsory1 > 0 or self.compulsory2 > 0:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "style_danceend" ORDER BY `compulsory_score`, `id` LIMIT 1', (self.id, ))
+                else:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "style_danceend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+                q = True
+            elif self.status == 'FREE_DANCE':
+                if self.style_dance > 0:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "free_danceend" ORDER BY `style_dance_score`, `id` LIMIT 1', (self.id, ))
+                elif self.compulsory1 > 0 or self.compulsory2 > 0:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "free_danceend" ORDER BY `compulsory_score`, `id` LIMIT 1', (self.id, ))
+                else:
+                    c.execute('SELECT * FROM `skaters` WHERE `category` = ? AND `status` NOT LIKE "free_danceend" ORDER BY `order`, `id` LIMIT 1', (self.id, ))
+                q = True
+        # End of SOLO DANCE case
         
         if q:
             data = c.fetchone()

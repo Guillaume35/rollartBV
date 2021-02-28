@@ -21,11 +21,11 @@ from functools import partial
 from tkinter import *
 
 #
-# ChoreoElement(element = ProgramElement, root = Frame, parent = BoxElement) Class
+# TravelingElement(element = ProgramElement, root = Frame, parent = BoxElement) Class
 #
-# Add a choreo step element to a program with 2 modes : display or form. Form is for 
+# Add a traveling element to a program with 2 modes : display or form. Form is for 
 # the recording of the technical specialist information. Display is a readonly mode.
-class ChoreoElement():
+class TravelingElement():
 
     def __init__(self, element, root, comp):
         self.root = root
@@ -44,7 +44,7 @@ class ChoreoElement():
 
             else:
 
-                if btn['text'] in ['NChSt', 'NLCCS']:
+                if btn['text'] == 'NLTr':
                     btn.configure(bg="red", fg="white")
                 else:
                     btn.configure(bg="#dfe7e8")
@@ -74,11 +74,7 @@ class ChoreoElement():
         self.frame = Frame(self.root, bg="#0a1526")
 
         # Base value
-        btns = ['NChSt', 'ChSt']
-
-        if hasattr(self.parent, 'category'):
-            if self.parent.category.type == 'SOLO DANCE':
-                btns = ['NLCCS', 'ChStS']
+        btns = ['NLTr', 'TrB', 'Tr1', 'Tr2', 'Tr3', 'Tr4']
         
         frame_step = Frame(self.frame, bg="#0a1526")
 
@@ -87,7 +83,7 @@ class ChoreoElement():
         for btnLabel in btns:
             self.btnsBas.append(Button(frame_step, text=btnLabel, font=("sans-serif", 11)))
 
-            if btnLabel in ['NChSt', 'NLCCS']:
+            if btnLabel == 'NLTr':
                 self.btnsBas[i].config(bg="red", fg="white")
 
             else:

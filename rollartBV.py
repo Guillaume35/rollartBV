@@ -236,8 +236,8 @@ class RollartApp:
             actionStart = partial(self.resume_category, category)
 
             # Dance is currently in developpment
-            if category.type == 'SOLO DANCE':
-                actionStart = partial(messagebox.showinfo, title="Can't start", message="Sorry, dance competition is not ready. You should upgrade as soon as it development is over.")
+            # if category.type == 'SOLO DANCE':
+            #     actionStart = partial(messagebox.showinfo, title="Can't start", message="Sorry, dance competition is not ready. You should upgrade as soon as it development is over.")
 
             cols = [None, None, None, None, None]
 
@@ -424,10 +424,42 @@ class RollartApp:
         # In the next case, we concider the program as "OVER" for all the category. We update 
         # category status and go the the list of categories with start_session() method.
         else:
-            if category.status.upper() == 'SHORT':
-                category.status = 'long'
-            else:
-                category.status = 'end'
+            # FREESKATING case
+            # possible status value : SHORT, LONG, END
+            if category.type == 'FREESKATING':
+                if category.status == 'SHORT':
+                    category.status = 'LONG'
+                else:
+                    category.status = 'END'
+            # End of FREESKATING case
+            
+            # SOLO DANCE case
+            # possible status value : COMPULSORY1, COMPULSORY2, STYLE_DANCE, FREE_DANCE, END
+            elif category.type == 'SOLO DANCE':
+                if category.status == 'COMPULSORY1':
+                    if category.compulsory2 > 0:
+                        category.status = 'COMPULSORY2'
+                    elif category.style_dance > 0:
+                        category.status = 'STYLE_DANCE'
+                    elif category.free_dance > 0:
+                        category.status = 'FREE_DANCE'
+                    else:
+                        category.status = 'END'
+                elif category.status == 'COMPULSORY2':
+                    if category.style_dance > 0:
+                        category.status = 'STYLE_DANCE'
+                    elif category.free_dance > 0:
+                        category.status = 'FREE_DANCE'
+                    else:
+                        category.status = 'END'
+                elif category.status == 'STYLE_DANCE':
+                    if category.free_dance > 0:
+                        category.status = 'FREE_DANCE'
+                    else:
+                        category.status = 'END'
+                else:
+                    category.status = 'END'
+            # End of SOLO DANCE case
 
             category.record()
 
@@ -1037,28 +1069,34 @@ class RollartApp:
 
 
     #
-    # confirm_skater()
+    # confirm_skater(skip = Boolean)
     # Method called when data operator click on Next skater
     # This method control if all mandatories values on the current program are set before confirmation of the
     # program. If not, an alert is raised.
-    def confirm_skater(self):
+    def confirm_skater(self, skip=False):
 
         # Program status has to be "STOP"
         if self.program.status.upper() == 'STOP':
             
             # Components must be applied
-            if self.program.skating_skills > 0 and self.program.transitions > 0 and self.program.choreography > 0 and self.program.performance > 0:
+            if (self.program.skating_skills > 0 and self.program.transitions > 0 and self.program.choreography > 0 and self.program.performance > 0) or skip:
 
                 self.close_components_windows()
 
                 skater = Skater(self.program.skater_id)
 
+                status = self.program.program_name.upper()+'END'
+
                 if self.program.program_name.upper() == 'SHORT':
-                    status = 'shortend'
                     skater.short_score = self.program.score
-                else:
-                    status = 'longend'
+                elif self.program.program_name.upper() == 'LONG':
                     skater.long_score = self.program.score
+                elif self.program.program_name.upper() in ['COMPULSORY1', 'COMPULSORY2']:
+                    skater.compulsory_score += self.program.score
+                elif self.program.program_name.upper() == 'STYLE_DANCE':
+                    skater.style_dance_score = self.program.score
+                elif self.program.program_name.upper() == 'FREE_DANCE':
+                    skater.free_dance_score = self.program.score
 
                 skater.status = status
                 skater.calculate()
@@ -1082,28 +1120,7 @@ class RollartApp:
     # Like confirm_skater, this method go to the next skater in the category but without any
     # control on the values. Program can be empty or not to be skiped.
     def skip_skater(self):
-
-        if self.program.status.upper() == 'STOP':
-
-            self.close_components_windows()
-            
-            skater = Skater(self.program.skater_id)
-
-            if self.program.program_name.upper() == 'SHORT':
-                status = 'shortend'
-                skater.short_score = self.program.score
-            else:
-                status = 'longend'
-                skater.long_score = self.program.score
-
-            skater.status = status
-            skater.calculate()
-            skater.record()
-
-            self.resume_category(self.category)
-
-        else:
-            messagebox.showwarning(title="Can't skip", message="Stop program before skip")
+        self.confirm_skater(skip=True)
     # End of skip_skater()
 
 
@@ -1131,7 +1148,7 @@ class RollartApp:
     # | Rank | Skater | Tech. score | Components | Deduction | Program | Total |
     def results(self, category, programType):
         # Create main window
-        window = Tk()
+        window = Toplevel(self.window)
 
         # Customizing window
         window.title("Results - "+category.name+" - "+programType+" - RollArt BV")
@@ -1166,8 +1183,8 @@ class RollartApp:
         label = Label(frame, text="Deduc.", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
         label.grid(row=i, column=4, sticky="nsew")
 
-        # If there is more than one program (short and long), the label for the score is "Program".
-        if category.short > 0 and category.long > 0:
+        # If there is more than one program (short and long / compuslory and free / style_dance + free), the label for the score is "Program".
+        if (category.type == 'FREESKATING' and category.short > 0 and category.long > 0) or (category.type == 'SOLO DANCE' and ((category.compulsory1 > 0 and category.free_dance > 0) or (category.compulsory2 > 0 and category.free_dance > 0) or (category.style_dance > 0 and category.free_dance > 0))):
             text = 'Program'
         # In the other case, there is only one program, the score of the program is also the total score
         else:
@@ -1177,8 +1194,10 @@ class RollartApp:
         label = Label(frame, text=text, font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
         label.grid(row=i, column=5, sticky="nsew")
 
-        # If there is a short program and we display the result of long program, we add a total column to the table
-        if category.short > 0 and programType.upper() == 'LONG':
+        # If there is a short program and we display the result of long program, 
+        # or if there is more than one dance and we display the result of the free dance
+        # we add a total column to the table
+        if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
             label = Label(frame, text="Total", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i, column=6, sticky="nsew")
         # End of check if long with total column added
@@ -1202,17 +1221,24 @@ class RollartApp:
             label = Label(frame, text=program.penalization, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=4, sticky="nsew")
 
-            if category.short <= 0 and programType.upper() == 'LONG':
-                score = program.total_score
-            else:
-                score = program.score
+            if category.type == 'FREESKATING':
+                if category.short <= 0 and programType.upper() == 'LONG':
+                    score = program.total_score
+                else:
+                    score = program.score
+            elif category.type == 'SOLO DANCE':
+                if (category.compulsory1 <= 0 and category.compulsory2 <= 0 and category.style_dance <= 0) and programType.upper() == 'FREE_DANCE':
+                    score = program.total_score
+                else:
+                    score = program.score
 
             label = Label(frame, text=score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i+1, column=5, sticky="nsew")
 
             col = 6
 
-            if category.short > 0 and programType.upper() == 'LONG':
+            # Display total score column for last program
+            if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
                 label = Label(frame, text=program.total_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
                 label.grid(row=i+1, column=col, sticky="nsew")
                 col += 1
@@ -1233,7 +1259,7 @@ class RollartApp:
 
         col = 6
 
-        if category.short > 0 and programType.upper() == 'LONG':
+        if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
             Grid.columnconfigure(frame, col, minsize=250)
             col += 1
 
@@ -1249,7 +1275,7 @@ class RollartApp:
     # result_program(program = Program)
     # Open result program application to display details on new window
     def result_program(self, program):
-        resultApp = ResultProgramApp(program)
+        resultApp = ResultProgramApp(program, self)
         resultApp.open_window()
     # End of result_program()
 

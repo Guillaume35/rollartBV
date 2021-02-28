@@ -20,12 +20,14 @@
 from functools import partial
 from tkinter import *
 
+import tools
+
 #
-# ChoreoElement(element = ProgramElement, root = Frame, parent = BoxElement) Class
+# PatternElement(element = ProgramElement, root = Frame, parent = BoxElement) Class
 #
-# Add a choreo step element to a program with 2 modes : display or form. Form is for 
+# Add a compulsory pattern section to a program with 2 modes : display or form. Form is for 
 # the recording of the technical specialist information. Display is a readonly mode.
-class ChoreoElement():
+class PatternElement():
 
     def __init__(self, element, root, comp):
         self.root = root
@@ -44,7 +46,7 @@ class ChoreoElement():
 
             else:
 
-                if btn['text'] in ['NChSt', 'NLCCS']:
+                if btn['text'] == 'Nlev':
                     btn.configure(bg="red", fg="white")
                 else:
                     btn.configure(bg="#dfe7e8")
@@ -74,11 +76,32 @@ class ChoreoElement():
         self.frame = Frame(self.root, bg="#0a1526")
 
         # Base value
-        btns = ['NChSt', 'ChSt']
+        btns = ['Nlev']
 
-        if hasattr(self.parent, 'category'):
-            if self.parent.category.type == 'SOLO DANCE':
-                btns = ['NLCCS', 'ChStS']
+        patterns = tools.compulsoryPatterns()
+
+        if self.parent.program.program_name.upper() == 'STYLE_DANCE':
+            pat = self.parent.category.style_dance_pattern
+        elif self.parent.program.program_name.upper() == 'COMPULSORY1':
+            pat = self.parent.category.compulsory1_pattern
+        else:
+            pat = self.parent.category.compulsory2_pattern
+
+        pattern = patterns[pat]
+        sec = self.parent.box.type.replace('PatternSection', '')
+
+        if sec == 'Pattern':
+            sec = '1'
+
+        # Level can be Base (B), 1, 2, 3, 4
+        # We use this label pattern : DANCECODE$L& where $ is the section number and & is the level code
+        for lv in ['B', '1', '2', '3', '4']:
+            label = pattern[1].replace('&', lv)
+            label = label.replace('$', sec)
+            btns.append(label)
+
+        label = Label(self.frame, text=pat+' (Section '+sec+')', font=("sans-serif", 12, 'bold'), bg="#0a1526", fg="white")
+        label.pack(pady=5)
         
         frame_step = Frame(self.frame, bg="#0a1526")
 
@@ -87,7 +110,7 @@ class ChoreoElement():
         for btnLabel in btns:
             self.btnsBas.append(Button(frame_step, text=btnLabel, font=("sans-serif", 11)))
 
-            if btnLabel in ['NChSt', 'NLCCS']:
+            if btnLabel == 'Nlev':
                 self.btnsBas[i].config(bg="red", fg="white")
 
             else:

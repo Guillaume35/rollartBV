@@ -35,6 +35,7 @@ class ResultProgramApp:
         self.window = None
         self.program = program
         self.frame = None
+        self.parent = parent
 
     #
     # open_window()
@@ -42,7 +43,10 @@ class ResultProgramApp:
     def open_window(self):
 
         # Create main window
-        self.window = Tk()
+        if self.parent:
+            self.window = Toplevel(self.parent.window)
+        else:
+            self.window = Tk()
 
         # Customizing window
         self.window.title("Program result - "+self.program.skater+" ("+self.program.program_name+") - RollArt BV")
