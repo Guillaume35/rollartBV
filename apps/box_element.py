@@ -136,9 +136,7 @@ class BoxElement():
         Grid.rowconfigure(frame_types, 0, weight=1)
 
         # list elements types
-        if self.program.program_name.upper() in ['SHORT', 'LONG']:
-            btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
-        elif self.program.program_name.upper() in ['COMPULSORY1', 'COMPULSORY2']:
+        if self.program.program_name.upper() in ['COMPULSORY1', 'COMPULSORY2']:
             patterns = tools.compulsoryPatterns()
 
             if self.program.program_name.upper() == 'COMPULSORY1':
@@ -156,6 +154,8 @@ class BoxElement():
             btnLabels = ['Pattern', 'Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling']
         elif self.program.program_name.upper() == 'FREE_DANCE':
             btnLabels = ['Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling', 'Choreo']
+        else:
+            btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
 
         i = 0
 

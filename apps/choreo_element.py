@@ -76,8 +76,8 @@ class ChoreoElement():
         # Base value
         btns = ['NChSt', 'ChSt']
 
-        if hasattr(self.parent, 'category'):
-            if self.parent.category.type == 'SOLO DANCE':
+        if hasattr(self.parent, 'program'):
+            if self.parent.program.program_name in ['STYLE_DANCE', 'FREE_DANCE']:
                 btns = ['NLCCS', 'ChStS']
         
         frame_step = Frame(self.frame, bg="#0a1526")
