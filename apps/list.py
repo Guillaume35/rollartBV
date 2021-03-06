@@ -31,7 +31,7 @@ class ListApp:
         self.frame = Frame(self.window, bg="#0a1526")
 
         self.frame.grid_columnconfigure(0, weight=1)
-        self.frame.grid_rowconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(1, weight=1)
 
         # Add a scroll frame for the rest of the elements
         self.scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
@@ -40,7 +40,7 @@ class ListApp:
         self.scrollFrame.interior.configure(bg="#0a1526")
         self.scrollFrame.canvas.configure(bg="#0a1526")
 
-        self.title_frame = Frame(self.scrollFrameIn, bg="#0a1526")
+        self.title_frame = Frame(self.frame, bg="#bd3800")
         self.table_frame = Frame(self.scrollFrameIn, bg="#0a1526")
         self.data = data
         self.labels = labels
@@ -83,11 +83,11 @@ class ListApp:
             self.entries[i][j].insert(0, value)
             self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
-        j += 1
+        #j += 1
 
-        action = partial(self.record, i, data)
-        self.entries[i].append(Button(self.table_frame, text="Save", font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
-        self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
+        #action = partial(self.record, i, data)
+        #self.entries[i].append(Button(self.table_frame, text="Save", font=("sans-serif", 10), bg="#dfe7e8", command=action, borderwidth=1))
+        #self.entries[i][j].grid(row=i+1, column=j, sticky="nesw")
 
         for a in range(len(self.actions)):
 
@@ -137,6 +137,13 @@ class ListApp:
 
         if (row == 0):
             self.add_row(ob.getAll())
+            self.data.append(ob.getAll())
+
+    def recordAll(self, btn):
+        btn.configure(text="Processing...")
+        for i in range(len(self.data)):
+            self.record(i+1, self.data[i])
+        btn.configure(text="Save")
 
     def delete(self, row, data):
 
@@ -153,8 +160,13 @@ class ListApp:
         # create elements
 
         # title
-        label_title = Label(self.title_frame, text=self.title, font=("sans-serif", 14), bg="#0a1526", fg="white")
-        label_title.pack()
+        label_title = Label(self.title_frame, text=self.title, font=("sans-serif", 14), bg="#bd3800", fg="white", pady=8)
+        label_title.grid(row=0, column=0, sticky="w")
+
+        btn = Button(self.title_frame, text="Save", font=("sans-serif", 12), bg="green", fg="white")
+        action = partial(self.recordAll, btn)
+        btn.configure(command=action)
+        btn.grid(row=0, column=1, sticky="nsew")
 
         # create header and new item row
         self.entries.append([])
@@ -173,10 +185,14 @@ class ListApp:
 
             Grid.columnconfigure(self.table_frame, i, weight=1)
 
-            self.header.append(Label(self.table_frame, text=self.labels[i]['label'], font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white",  borderwidth=1, relief="groove"))
+            self.header.append(Label(self.table_frame, text=self.labels[i]['label'], font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white",  borderwidth=1, relief="groove", pady=8))
             self.header[i].grid(row=0, column=i, sticky="nesw")
 
             entry = Entry(self.table_frame, width=width, font=(font, 10), borderwidth=1, relief='flat')
+            action = partial(self.focusIn, 0)
+            entry.bind('<FocusIn>', action)
+            action = partial(self.focusOut, 0)
+            entry.bind('<FocusOut>', action)
             self.entries[0].append(entry)
 
             if 'value' in self.labels[i].keys():
@@ -196,10 +212,12 @@ class ListApp:
             self.add_row(d)
 
         # add to window
-        self.title_frame.pack(pady=15)
-        self.table_frame.pack(pady=15, fill=X)
+        self.title_frame.grid(row=0, column=0, sticky="nesw")
+        self.title_frame.grid_columnconfigure(0, weight=1)
 
-        self.scrollFrame.grid(row=0, column=0, sticky="nesw")
+        self.table_frame.pack(fill=X)
+
+        self.scrollFrame.grid(row=1, column=0, sticky="nesw")
 
         self.window.grid_columnconfigure(0, weight=1)
         self.window.grid_rowconfigure(0, weight=1)

@@ -53,6 +53,7 @@ class CategoryApp:
         self.compulsory1DanceVar = None
         self.compulsory2DanceVar = None
         self.style_dancePatternVar = None
+        self.statusVar = None
 
     def open_window(self):
 
@@ -183,6 +184,8 @@ class CategoryApp:
         # - short program
         # - long program
         if self.category.type == "FREESKATING":
+
+            statusList = ('UNSTARTED', 'SHORT', 'LONG', 'END')
             
             # short program
             self.shortVar = IntVar()
@@ -222,6 +225,7 @@ class CategoryApp:
         elif self.category.type == "SOLO DANCE":
 
             patterns = ('Quickstep', 'Starlight', 'Harris Tango Solo', 'Harris Tango Couples', 'Tango Delanco', 'Midnight Blues', 'Fourteen Step', 'Rocker Foxtrot', 'Blues Pattern', 'Terenzi Pattern', 'Westminster Waltz', 'Viennese Waltz', 'Paso Doble Pattern', 'Argentine Tango Solo', 'Argentine Tango', 'Italian Foxtrot', 'Castel March', 'City Blues', 'Carlos Tango', 'Skaters March', 'La Vista Cha Cha', 'Canasta Tango', 'Denver Shuffle', 'Tudor Waltz', 'Easy Paso', 'Association Waltz', 'Killian', 'Shaken Samba', 'Tango Delancha', 'Tango Iceland', 'Loran Rumba', 'Golden Samba', 'Roller Samba Couples', 'Roller Samba Solo', 'Cha Cha Patin', 'Little Waltz Couples', 'Little Waltz Solo', 'Flirtation Waltz Solo', 'Federation Foxtrot Solo', 'Kent Tango Solo', 'Siesta Tango SandC', 'Swing Foxtrot Couple')
+            statusList = ('UNSTARTED', 'COMPULSORY1', 'COMPULSORY2', 'STYLE_DANCE', 'FREE_DANCE', 'END')
 
             # Compulsory dance 1
             self.compulsory1Var = IntVar()
@@ -297,6 +301,22 @@ class CategoryApp:
 
         frame.pack(fill=X, pady=10, padx=10)
 
+        frame = Frame(self.frame, bg="#0a1526")
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(1, weight=1)
+
+        label = Label(frame, text="Status", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label.grid(row=0, column=0, pady=10, sticky="w")
+
+        self.statusVar = StringVar()
+        self.statusVar.set(self.category.status)
+
+        om = OptionMenu(frame, self.statusVar, *statusList)
+        om.configure(anchor="w")
+        om.grid(row=0, column=1, pady=10, sticky="nsew")
+
+        frame.pack(fill=X, pady=10, padx=10)
+
         self.window.grid_columnconfigure(0, weight=1)
         self.window.grid_rowconfigure(0, weight=1)
 
@@ -331,6 +351,8 @@ class CategoryApp:
             self.category.compulsory2_pattern = self.compulsory2DanceVar.get()
             self.category.style_dance_pattern = self.style_dancePatternVar.get()
             # end of case SOLO DANCE
+
+        self.category.status = self.statusVar.get()
 
         # Check if something is started in this category.
         # If nothing is started, category status is set to unstarted

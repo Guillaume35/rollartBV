@@ -88,6 +88,15 @@ class Category:
 
     @property
     def status(self):
+
+        # Check integrity in case of category type changes
+        if self._status and str(self._status).upper() != 'UNSTARTED':
+            if self.type == 'FREESKATING' and self._status.upper() not in ('SHORT', 'LONG', 'END'):
+                self._status = 'UNSTARTED'
+            elif self.type == 'SOLO DANCE' and self._status.upper() not in ('COMPULSORY1', 'COMPULSORY2', 'STYLE_DANCE', 'FREE_DANCE', 'END'):
+                self._status = 'UNSTARTED'
+        # End of intergrity
+
         if not self._status or str(self._status).upper() == 'UNSTARTED':
             # For FREESKATING, we only have short or long program.
             # So if status is None, only to case can occure
@@ -400,6 +409,11 @@ class Category:
             programs.append(Program(d))
 
         return programs
+
+    # reset
+    def reset(self):
+        self.status = "UNSTARTED"
+        self.record()
 
     # Remove element from database
     def delete(self):
