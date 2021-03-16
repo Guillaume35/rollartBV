@@ -93,3 +93,11 @@ def compulsoryPatterns():
     }
 
     return patterns
+
+# changeTupleVal()
+# Change tuple value by index
+def changeTupleVal(tuple, index, val):
+    y = list(tuple)
+    y[index] = val
+    x = tuple(x)
+    return x
