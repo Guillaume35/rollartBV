@@ -171,25 +171,83 @@ class Program:
         
         self.total_score = self.score
 
-        # Add short program score to total
-        if self.program_name.upper() == 'LONG' and self.skater_id:
+        last_program = False
+
+        # Calculate the total score in case
+        # First competition mode check
+        if self.skater_id and self.category:
+
             c.row_factory = tools.dict_factory
 
+            # Secondly, get category configuration
+
+            c.execute("SELECT * FROM `categories` WHERE `id` = ?", (self.category, ))
+            category = c.fetchone()
+
+            # Freeskating case
+            if category['type'].upper() == 'FREESKATING':
+
+                # In freeskating mode, the last program is long program
+                if self.program_name.upper() == 'LONG':
+
+                    last_program = True
+
+                    # Add short program score if activated
+                    if category['short']:
+                        c.execute("SELECT * FROM `programs` WHERE `program_name` LIKE 'short' AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1", 
+                            (self.skater_id, self.category, self.session))
+
+                        data = c.fetchone()
+
+                        if data:
+                            self.total_score += data['score']
+            # End of freeskating statement
+
+            # Solo dance case
+            elif category['type'].upper() == 'SOLO DANCE':
+
+                # In SOLO DANCE mode, last program can be COMPULSORY1, COMPULSORY2 or FREE_DANCE
+                cond = (self.skater_id, self.category, self.session)
+                data = None
+
+                if category['free_dance'] and self.program_name.upper() == 'FREE_DANCE':
+                    query = "SELECT SUM(`score`) AS `total` FROM `programs` WHERE UPPER(`program_name`) IN ('STYLE_DANCE', 'COMPULSORY2', 'COMPULSORY1') AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1"
+                    c.execute(query, cond)
+                    data = c.fetchone()
+                    last_program = True
+                
+                elif category['style_dance'] and self.program_name.upper() == 'STYLE_DANCE':
+                    query = "SELECT SUM(`score`) AS `total` FROM `programs` WHERE UPPER(`program_name`) IN ('COMPULSORY2', 'COMPULSORY1') AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1"
+                    c.execute(query, cond)
+                    data = c.fetchone()
+                    last_program = True
+
+                elif category['compulsory2'] and self.program_name.upper() == 'COMPULSORY2':
+                    query = "SELECT SUM(`score`) AS `total` FROM `programs` WHERE UPPER(`program_name`) IN ('COMPULSORY1') AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1"
+                    c.execute(query, cond)
+                    data = c.fetchone()
+                    last_program = True
+
+                elif category['compulsory1'] and self.program_name.upper() == 'COMPULSORY1':
+                    last_program = True
+
+
+                if data:
+                    if data['total']:
+                        self.total_score += float(data['total'])
+            # End of solo dance statement
+
+        # Add initial score in case of it is the last program
+        if last_program:
             c.execute("SELECT `initial_score` FROM `skaters` WHERE `id` = ?", (self.skater_id, ))
             data = c.fetchone()
 
             if data['initial_score']:
                 self.total_score += float(data['initial_score'])
+        # End of last program statement
+        
+        self.total_score = round(self.total_score, 2)
 
-            c.execute("SELECT * FROM `programs` WHERE `program_name` = 'short' AND `skater_id` = ? AND `category` = ? AND `session` = ? LIMIT 1", 
-                (self.skater_id, self.category, self.session))
-
-            data = c.fetchone()
-
-            if data:
-                self.total_score += data['score']
-            
-            self.total_score = round(self.total_score, 2)
 
     # get rank for this program
     def getRank(self):

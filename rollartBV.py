@@ -1105,7 +1105,7 @@ class RollartApp:
         # If there is a short program and we display the result of long program, 
         # or if there is more than one dance and we display the result of the free dance
         # we add a total column to the table
-        if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
+        if (category.short and programType.upper() == 'LONG') or ((category.compulsory1 or category.compulsory2 or category.style_dance) and programType.upper() == 'FREE_DANCE'):
             label = Label(frame, text="Total", font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
             label.grid(row=i, column=6, sticky="nsew")
         # End of check if long with total column added
@@ -1146,7 +1146,7 @@ class RollartApp:
             col = 6
 
             # Display total score column for last program
-            if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
+            if (category.short and programType.upper() == 'LONG') or ((category.compulsory1 or category.compulsory2 or category.style_dance) and programType.upper() == 'FREE_DANCE'):
                 label = Label(frame, text=program.total_score, font=("sans-serif", 12), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
                 label.grid(row=i+1, column=col, sticky="nsew")
                 col += 1
@@ -1167,7 +1167,7 @@ class RollartApp:
 
         col = 6
 
-        if (category.short > 0 and programType.upper() == 'LONG') or ((category.compulsory1 > 0 or category.compulsory2 > 0 or category.style_dance > 0) and programType.upper() == 'FREE_DANCE'):
+        if (category.short and programType.upper() == 'LONG') or ((category.compulsory1 or category.compulsory2 or category.style_dance) and programType.upper() == 'FREE_DANCE'):
             Grid.columnconfigure(frame, col, minsize=250)
             col += 1
 
