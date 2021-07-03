@@ -22,6 +22,7 @@ from pathlib import Path
 from functools import partial
 import urllib.request
 import urllib.parse
+import sys
 
 from tkinter import *
 from tkinter import messagebox
