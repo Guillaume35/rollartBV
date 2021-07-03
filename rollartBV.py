@@ -70,9 +70,9 @@ class RollartApp:
         # Customizing window
         self.window.title("RollArt Unchained")
 
-        dir_path = os.path.dirname(sys.argv[0])
+        #dir_path = os.path.dirname(sys.argv[0])
 
-        self.window.iconphoto(True, PhotoImage(file=dir_path+'/assets/icon-512.png'))
+        #self.window.iconphoto(True, PhotoImage(file=dir_path+'/assets/icon-512.png'))
 
         w = self.window.winfo_screenwidth()
         h = self.window.winfo_screenheight()
