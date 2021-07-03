@@ -457,7 +457,7 @@ class BoxElement():
                     code = urllib.parse.quote_plus(lastAdded.code+label)
                     self.parent.program.calculate()
 
-                    url = self.parent.display_url+'?liveScoreEl='+code+'&liveScoreVal='+str(lastAdded.base_value)+'&liveScoreSk='+str(self.parent.program.total_score)
+                    url = self.parent.session.display_url+'?liveScoreEl='+code+'&liveScoreVal='+str(lastAdded.base_value)+'&liveScoreSk='+str(self.parent.program.total_score)
                     urllib.request.urlopen(url)
             # End of SERVER EXCHANGE
 
