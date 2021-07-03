@@ -81,7 +81,7 @@ class RollartApp:
         self.window.minsize(1280,720)
         self.window.config(background="#0a1526")
 
-        self.window.attributes('-zoomed', True)  
+        #self.window.attributes('-zoomed', True)  
         self.fullScreenState = False
         self.window.bind("<F11>", self.toggleFullScreen)
 
