@@ -47,6 +47,7 @@ from motor.element import *
 from motor.element_type import *
 from motor.program_element import *
 from motor.skater import *
+from motor.server import *
 
 from penalty import *
 from component import *
@@ -79,6 +80,10 @@ class RollartApp:
         self.window.minsize(1280,720)
         self.window.config(background="#0a1526")
 
+        self.window.attributes('-zoomed', True)  
+        self.fullScreenState = False
+        self.window.bind("<F11>", self.toggleFullScreen)
+
         # Initializing values
         self.frame = None
         self.skater_entry = None
@@ -100,6 +105,8 @@ class RollartApp:
         self.category = None
         self.componentsApps = []
         self.footer = None
+
+        self.server = None
 
         # Check current session
         # The system is able to open only one session at a time even if the
@@ -143,6 +150,11 @@ class RollartApp:
     # it is no more possible to add skaters.
     def start_session(self):
 
+        # Close server if server mode
+        if self.server:
+            self.server.stop()
+            self.server = None
+
         # Clear the root window and add a new empty frame
         self.frame.pack_forget()
         self.frame.destroy()
@@ -155,7 +167,7 @@ class RollartApp:
         # Title frame
         frame = Frame(self.frame, bg="#bd3800")
 
-        label = Label(frame, text="Ready to start !", bg="#bd3800", fg="white", font=("sans-serif", 14), justify=LEFT, padx=10)
+        label = Label(frame, text="Ready to start !", bg="#bd3800", fg="white", font=("sans-serif", 14, 'bold'), justify=LEFT, padx=10)
         label.grid(row=0, column=1, sticky="nesw", ipadx=5, ipady=10)
 
         btn = Button(frame, text="Home", font=("sans-serif", 12), command=self.home)
@@ -163,12 +175,8 @@ class RollartApp:
 
         frame.grid(row=0, column=0, sticky="nesw")
 
-        # Add a scroll frame for the rest of the elements
-        scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
-
-        scrollFrameIn = scrollFrame.interior
-        scrollFrame.interior.configure(bg="#0a1526")
-        scrollFrame.canvas.configure(bg="#0a1526")
+        # Global frame to contain teams table on the left and categories on the right
+        global_frame = Frame(self.frame, bg="")
 
         #
         # TEAMS TABLE
@@ -177,35 +185,50 @@ class RollartApp:
         # skaters with the same team name.
         teams = Skater.getTeams(self.session.id)
 
+        teams_frame = Frame(global_frame, bg="")
+
         if teams:
 
             if len(teams):
 
-                frame = Frame(scrollFrameIn, bg="#0a1526")
+                frame = Frame(teams_frame, bg="#0a1526")
 
-                label = Label(frame, text="Teams score", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
-                label.pack(fill=X)
+                label = Label(frame, text=str(len(teams))+" teams", bg="#0a1526", fg="white", font=("sans-serif", 14, "bold"), justify=LEFT)
+                label.pack(anchor=NW, pady=15)
 
-                frame.pack(fill=X, pady=15)
+                frame.pack(fill=X, padx=15)
 
-                frame = Frame(scrollFrameIn, bg="#0a1526")
+                frame = Frame(teams_frame, bg="#0a1526")
 
-                i=0
+                # Header for teams table
+                headers = ['Team', 'Score']
+
+                j=0
+
+                for header in headers:
+                    label = Label(frame, text=header,  bg="#0a1526", fg="white", font=("sans-serif", 12, 'bold'), justify=LEFT, padx=15, pady=10, borderwidth=1, relief="groove", anchor="w")
+                    label.grid(row=0, column=j, sticky="nesw")
+                    j+=1
+                
+                i=1
 
                 # For each team, we show the team name and the current score
                 for team in teams:
 
-                    label = Label(frame, text=team['team'], bg="#0a1526", fg="white", font=("sans-serif", 12), justify=LEFT, padx=10, borderwidth=1, relief="groove", anchor="w")
-                    label.grid(row=0, column=i, sticky="nesw", ipadx=5, ipady=10)
+                    labs = [team['team'], round(team['total_score'],2)]
 
-                    label = Label(frame, text=round(team['total_score'],2), bg="#0a1526", fg="white", font=("sans-serif", 12), justify=LEFT, padx=10, borderwidth=1, relief="groove", anchor="w")
-                    label.grid(row=1, column=i, sticky="nesw", ipadx=5, ipady=10)
+                    j=0
 
-                    Grid.columnconfigure(frame, i, weight=1)
+                    for lab in labs:
+                        label = Label(frame, text=lab, bg="#0a1526", fg="white", font=("sans-serif", 12), justify=LEFT, padx=15, pady=10, borderwidth=1, relief="groove", anchor="w")
+                        label.grid(row=i, column=j, sticky="nesw")
+                        j+=1
 
                     i +=1
 
-                frame.pack(fill=X, pady=15)
+                frame.pack(fill=X, padx=15)
+
+        teams_frame.grid(column=0, row=0, ipadx=15, sticky="nesw")
         # End of TEAMS TABLE
         #
 
@@ -213,184 +236,68 @@ class RollartApp:
         # CATEGORIES TABLE
         # List all the categories in the defined order and show available options for each one.
         # Options can be : start short, start long, wait long (if short is not ended), results short (if ended), results long (if ended)
-        label = Label(scrollFrameIn, text="Categories", bg="#0a1526", fg="white", font=("sans-serif", 12, "bold"), justify=LEFT, padx=10)
-        label.pack(fill=X, pady=15)
+        
+        # Add a scroll frame for the rest of the elements
+        scrollFrame = VerticalScrolledFrame(global_frame, bg="#0a1526")
 
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
+
+        label = Label(scrollFrameIn, text="Categories", bg="#0a1526", fg="white", font=("sans-serif", 14, "bold"), justify=LEFT)
+        label.pack(anchor=NW, pady=15, padx=15)
+
+        # Table frame
         frame = Frame(scrollFrameIn, bg="#0a1526")
 
         categories = self.session.getCategories()
 
-        i=0
+        # Table headers
+        headers = ['Type', 'Category', 'Skaters', 'Status', '']
+        j=0
+
+        for header in headers:
+            label = Label(frame, text=header, bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12, 'bold'), padx=15, pady=10)
+            label.grid(row=0, column=j, sticky="nesw", ipadx=10, ipady=10)
+            j+=1
+
+        i=1
 
         # For each category, we check for possibles options
         for category in categories:
 
-            # Category label includes category name and number of skaters.
-            label = Label(frame, text=category.type+' '+category.name+ ' ('+str(category.getSkatersNum())+' skaters)', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=10)
-            label.grid(row=i, column=0, sticky="nesw", ipadx=10, ipady=10)
+            # Table content
+            labs = [category.type, category.name, str(category.getSkatersNum()), category.status]
+            j=0
 
-            # Button START has the same callback function even for short and long program.
-            # START button call the resume_category method which start the category/last program 
-            # at the last knowed point. So it is possible to restart a category or a program at
-            # computer breakpoint (if so).
-            actionStart = partial(self.resume_category, category)
+            for lab in labs:
+                label = Label(frame, text=lab, bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=15, pady=10)
+                label.grid(row=i, column=j, sticky="nesw", ipadx=10, ipady=10)
+                j+=1
+            
+            # List button
+            actionList = partial(self.list_skaters, category)
+            btn = Button(frame, text='GO !', font=("sans-serif", 12, 'bold'), command=actionList)
+            btn.grid(row=i, column=j, ipadx=10, ipady=10, sticky='nesw')
 
-            # Dance is currently in developpment
-            # if category.type == 'SOLO DANCE':
-            #     actionStart = partial(messagebox.showinfo, title="Can't start", message="Sorry, dance competition is not ready. You should upgrade as soon as it development is over.")
+            i+=1
 
-            cols = [None, None, None, None, None]
-
-            # If short program
-            if category.type == 'FREESKATING' and category.short > 0:
-                
-                # Short program can be "UNSTARTED" or running ("SHORT"). All other status value 
-                # is concidered as short program end so we can display the results button (else statement)
-                if category.status in ['UNSTARTED', 'SHORT']:
-                    btn = Button(frame, text="Start short", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
-                
-                # Short program ended
-                else:
-                    action = partial(self.results, category, 'short')
-                    btn = Button(frame, text="Short results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
-                # End of ended statement
-
-                cols[3] = True
-            # End of if short program
-
-            # If long program
-            if category.type == 'FREESKATING' and category.long > 0:
-                # Long program can be running ("LONG") or ended ("END"). If there is no short program defined 
-                # in the category, status can be nothing or END.
-                if category.status == 'LONG' or (category.short <= 0 and category.status != 'END'):
-                    btn = Button(frame, text="Start long", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-                
-                # If long program is END, we propose the results
-                elif category.status == 'END':
-                    action = partial(self.results, category, 'long')
-                    btn = Button(frame, text="Long results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-
-                # In case of short program which is not over in the category, we show a WAIT button for 
-                # the long program that indicate short program must be finished first.
-                else:
-                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish short program first")
-                    btn = Button(frame, text="Wait long", font=("sans-serif", 12), command=actionWait)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-                # End of program status statement
-
-                cols[4] = True
-            # End of if long program
-
-            # If compuslory dance 1
-            if category.type == "SOLO DANCE" and category.compulsory1 > 0:
-                # Compulsory1 can be "UNSTARTED" or running ("COMPULSORY1"). All other status value
-                # is concidered as compulsory1 end so we can display result button
-                if category.status in ['UNSTARTED', 'COMPULSORY1']:
-                    btn = Button(frame, text="Start Comp. 1", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
-                
-                # Compulsory1 ended
-                else:
-                    action = partial(self.results, category, 'compulsory1')
-                    btn = Button(frame, text="Comp. 1 results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=1, ipadx=10, ipady=10, sticky='nesw')
-                # End of compulsory status statement
-
-                cols[1] = True
-            # End of compulsory 1 statement
-
-            # If compuslory dance 2
-            if category.type == "SOLO DANCE" and category.compulsory2 > 0:
-                # We concider compulsory dance started if the status is "COMPULSORY2".
-                if category.status == 'COMPULSORY2':
-                    btn = Button(frame, text="Start Comp. 2", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
-
-                # If status is COMPULSORY1, UNSTARTED or nothing, we concider not possible to start compulsory 2
-                elif category.status in ['COMPULSORY1', 'UNSTARTED']:
-                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory 1 first")
-                    btn = Button(frame, text="Wait comp. 2", font=("sans-serif", 12), command=actionWait)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
-                
-                # Compulsory2 ended
-                else:
-                    action = partial(self.results, category, 'compulsory2')
-                    btn = Button(frame, text="Comp. 2 results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=2, ipadx=10, ipady=10, sticky='nesw')
-                # End of compulsory status statement
-
-                cols[2] = True
-            # End of compulsory 2 statement
-
-            # If style dance
-            if category.type == "SOLO DANCE" and category.style_dance > 0:
-                # We concider style dance started if the status is "STYLE_DANCE".
-                if category.status == 'STYLE_DANCE':
-                    btn = Button(frame, text="Start Style", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
-
-                # If status is COMPULSORY1, COMPULSORY2 UNSTARTED or nothing, we concider not possible to style dance
-                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'UNSTARTED']:
-                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory first")
-                    btn = Button(frame, text="Wait style", font=("sans-serif", 12), command=actionWait)
-                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
-                
-                # Style dance ended
-                else:
-                    action = partial(self.results, category, 'style_dance')
-                    btn = Button(frame, text="Style results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=3, ipadx=10, ipady=10, sticky='nesw')
-                # End of style dance status statement
-
-                cols[3] = True
-            # End of style dance statement
-
-            # If free dance
-            if category.type == "SOLO DANCE" and category.free_dance > 0:
-                # We concider free dance started if the status is "FREE_DANCE".
-                if category.status == 'FREE_DANCE':
-                    btn = Button(frame, text="Start Free", font=("sans-serif", 12, "bold"), bg="#bd3800", fg="white", command=actionStart)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-
-                # If status is COMPULSORY1, COMPULSORY2, STYLE_DANCE, UNSTARTED or nothing, we concider not possible to start free dance
-                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'STYLE_DANCE', 'UNSTARTED']:
-                    actionWait = partial(messagebox.showinfo, title="Can't start", message="Finish previous dance first")
-                    btn = Button(frame, text="Wait free", font=("sans-serif", 12), command=actionWait)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-                
-                # Free dance ended
-                else:
-                    action = partial(self.results, category, 'free_dance')
-                    btn = Button(frame, text="Free results", font=("sans-serif", 12), bg="PaleGreen1", command=action)
-                    btn.grid(row=i, column=4, ipadx=10, ipady=10, sticky='nesw')
-                # End of free dance status statement
-
-                cols[4] = True
-            # End of free dance statement
-
-            # put a grid on empty places
-            for coli in range(1,5):
-                if not cols[coli]:
-                    label = Label(frame, text='', bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12))
-                    label.grid(row=i, column=coli, sticky="nesw")
-            # End of grid on empty places
-
-            i += 1
         # End of for each categories
 
-        Grid.columnconfigure(frame, 0, weight=1)
+        Grid.columnconfigure(frame, 2, weight=1)
 
 
-        frame.pack(fill=X, pady=10)
+        frame.pack(fill=X, pady=10, padx=15)
 
         # End of CATEGORIES TABLE
         #
 
-        scrollFrame.grid(row=1, column=0, sticky="nesw")
+        scrollFrame.grid(row=0, column=1, sticky="nesw")
+
+        global_frame.grid(row=1, column=0, sticky="nesw")
+
+        global_frame.grid_columnconfigure(1, weight=1)
+        global_frame.grid_rowconfigure(0, weight=1)
 
         self.window.grid_columnconfigure(0, weight=1)
         self.window.grid_rowconfigure(0, weight=1)
@@ -570,8 +477,11 @@ class RollartApp:
             actionStart = self.start_session
         # End of check session statement
 
-        start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=8, command=actionStart)
+        start_btn = Button(menu_frame, text="Start", font=("sans-serif", 14, "bold"), bg="#bd3800", fg="white", pady=10, command=actionStart)
         start_btn.pack(pady=10, fill=X, padx=5)
+
+        btn = Button(menu_frame, text="Join network", font=("sans-serif", 12), pady=10)
+        btn.pack(pady=10, fill=X, padx=5)
 
         # End of START OPTIONS
         #
@@ -587,9 +497,6 @@ class RollartApp:
             categoryApp = CategoryApp(self)
 
             btn = Button(menu_frame, text="Categories", font=("sans-serif", 12), bg="#dfe7e8", command=categoryApp.open_window)
-            btn.pack(pady=5, fill=X, padx=5)
-
-            btn = Button(menu_frame, text="Skaters", font=("sans-serif", 12), bg="#dfe7e8", command=self.skater_database)
             btn.pack(pady=5, fill=X, padx=5)
         # End of session check statement
 
@@ -647,6 +554,7 @@ class RollartApp:
         title_frame = Frame(self.frame, bg="#bd3800")
 
         if self.session:
+            #action=partial(self.list_skaters, self.category)
             action=self.start_session
             text="Back"
         else:
@@ -1278,6 +1186,530 @@ class RollartApp:
         resultApp = ResultProgramApp(program, self)
         resultApp.open_window()
     # End of result_program()
+
+
+    #
+    # toggleFullScreen(event)
+    # Toggle window in fullscreen mode
+    def toggleFullScreen(self, event):
+        self.fullScreenState = not self.fullScreenState
+        self.window.attributes("-zoomed", self.fullScreenState)
+    # End of toggleFullScreen()
+
+
+    #
+    # list_skaters(category = Category)
+    # This program show the liste of skaters in a specific category. Data operator will be able to start the session
+    # from a specific
+    def list_skaters(self, category):
+        # Clear the root window and add a new empty frame
+        self.frame.pack_forget()
+        self.frame.destroy()
+
+        self.frame = Frame(self.window, bg="#0a1526")
+
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_columnconfigure(1, weight=1)
+        self.frame.grid_rowconfigure(1, weight=1)
+
+        # Title frame
+        frame = Frame(self.frame, bg="#bd3800")
+
+        btn = Button(frame, text="Back", font=("sans-serif", 12), command=self.start_session)
+        btn.grid(row=0, column=0, sticky="nesw", ipadx=5, ipady=10)
+
+        if category.status == 'UNSTARTED':
+            status_bg = '#d6202c'
+        elif category.status == 'END':
+            status_bg = '#40c91a'
+        else:
+            status_bg = '#eba434'
+
+        labs = [
+            {
+                'label': category.name,
+                'sticky': 'w',
+                'font': ("sans-serif", 14, 'bold')
+            },
+            {
+                'label':  'Status'
+            },
+            {
+                'label': category.status,
+                'bg': status_bg
+            }
+        ]
+
+        # SERVER SYSTEM
+        if self.session.network:
+            self.server = Server('127.0.0.1', self.session.port)
+            self.server.start()
+        # END OF SERVER SYSTEM
+
+        c = 1
+
+        for lab in labs:
+            if not 'sticky' in lab.keys():
+                lab['sticky'] = 'nesw'
+            
+            if not 'bg' in lab.keys():
+                lab['bg'] = '#bd3800'
+            
+            if not 'font' in lab.keys():
+                lab['font'] = ("sans-serif", 12)
+            
+            label = Label(frame, text=lab['label'], bg=lab['bg'], fg="white", font=lab['font'], justify=LEFT, padx=10)
+            label.grid(row=0, column=c, sticky=lab['sticky'], ipadx=5, ipady=10)
+
+            c+=1
+
+        frame.grid(row=0, column=0, sticky="nesw", columnspan=2)
+        frame.grid_columnconfigure(1, weight=1)
+
+        # Competition frame
+
+        competition_frame = Frame(self.frame, bg="")
+
+        label = Label(competition_frame, text="Category manager", font=("sans-serif", 14, "bold"), bg="#0a1526", fg="white")
+        label.pack(pady=10, padx=10, anchor=NW)
+
+        # Button START has the same callback function even for short and long program.
+        # START button call the resume_category method which start the category/last program 
+        # at the last knowed point. So it is possible to restart a category or a program at
+        # computer breakpoint (if so).
+        actionStart = partial(self.resume_category, category)
+
+        rows = []
+
+        # Freeskating category
+        if category.type == 'FREESKATING':
+            # If short program
+            if category.short > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Over',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Program is over"),
+                        'font': ("sans-serif", 14)
+                    }, 
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'short')
+                    }
+                ]
+            
+                # Short program can be "UNSTARTED" or running ("SHORT"). All other status value 
+                # is concidered as short program end so we can display the results button (else statement)
+                if category.status in ['UNSTARTED', 'SHORT']:
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+                
+                # Short program ended
+                else:
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+
+                rows.append({
+                    'label': 'Short program',
+                    'btns_cf': btns_cf
+                })
+            # End of if short program
+
+            # If long program
+            if category.long > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Wait',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Finish short program first"),
+                        'font': ("sans-serif", 14)
+                    }, 
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'long')
+                    }
+                ]
+
+                # Long program can be running ("LONG") or ended ("END"). If there is no short program defined 
+                # in the category, status can be nothing or END.
+                if category.status == 'LONG' or (category.short <= 0 and category.status != 'END'):
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+                
+                # If long program is END, we propose the results
+                elif category.status == 'END':
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+
+                    btns_cf[0]['text'] = 'Over'
+                    btns_cf[0]['command'] = partial(messagebox.showinfo, title="Can't start", message="Program is over")
+
+                rows.append({
+                    'label': 'Long program',
+                    'btns_cf': btns_cf
+                })
+            # End of if long program
+        # End of if freeskating category
+
+        # If solo dance category
+        if category.type == "SOLO DANCE":
+            # If compuslory dance 1
+            if category.compulsory1 > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Over',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Program is over"),
+                        'font': ("sans-serif", 14)
+                    },
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'compulsory1')
+                    }
+                ]
+
+                # Compulsory1 can be "UNSTARTED" or running ("COMPULSORY1"). All other status value
+                # is concidered as compulsory1 end so we can display result button
+                if category.status in ['UNSTARTED', 'COMPULSORY1']:
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+                
+                # Compulsory1 ended
+                else:
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+                # End of compulsory status statement
+
+                rows.append({
+                    'label': 'Compulsory 1',
+                    'btns_cf': btns_cf
+                })
+            # End of compulsory 1 statement
+
+            # If compuslory dance 2
+            if category.compulsory2 > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Over',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Program is over"),
+                        'font': ("sans-serif", 14)
+                    },
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'compulsory2')
+                    }
+                ]
+
+                # We concider compulsory dance started if the status is "COMPULSORY2".
+                if category.status == 'COMPULSORY2':
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+
+                # If status is COMPULSORY1, UNSTARTED or nothing, we concider not possible to start compulsory 2
+                elif category.status in ['COMPULSORY1', 'UNSTARTED']:
+                    btns_cf[0]['text'] = 'Wait'
+                    btns_cf[0]['command'] = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory 1 first")
+                
+                # Compulsory2 ended
+                else:
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+                # End of compulsory status statement
+
+                rows.append({
+                    'label': 'Compulsory 2',
+                    'btns_cf': btns_cf
+                })
+            # End of compulsory 2 statement
+
+            # If style dance
+            if category.style_dance > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Over',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Program is over"),
+                        'font': ("sans-serif", 14)
+                    },
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'style_dance')
+                    }
+                ]
+
+                # We concider style dance started if the status is "STYLE_DANCE".
+                if category.status == 'STYLE_DANCE':
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+
+                # If status is COMPULSORY1, COMPULSORY2 UNSTARTED or nothing, we concider not possible to style dance
+                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'UNSTARTED']:
+                    btns_cf[0]['text'] = 'Wait'
+                    btns_cf[0]['command'] = partial(messagebox.showinfo, title="Can't start", message="Finish compulsory first")
+                
+                # Style dance ended
+                else:
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+                # End of style dance status statement
+
+                rows.append({
+                    'label': 'Style dance',
+                    'btns_cf': btns_cf
+                })
+            # End of style dance statement
+
+            # If free dance
+            if category.free_dance > 0:
+
+                btns_cf = [
+                    {
+                        'text': 'Over',
+                        'command': partial(messagebox.showinfo, title="Can't start", message="Program is over"),
+                        'font': ("sans-serif", 14)
+                    },
+                    {
+                        'text': 'Skating Order',
+                        'command': partial(messagebox.showinfo, title="Info", message="Currently in developpment")
+                    }, 
+                    {
+                        'text': 'Results',
+                        'command': partial(self.results, category, 'free_dance')
+                    }
+                ]
+
+                # We concider free dance started if the status is "FREE_DANCE".
+                if category.status == 'FREE_DANCE':
+                    btns_cf[0]['text'] = 'Start'
+                    btns_cf[0]['command'] = actionStart
+                    btns_cf[0]['font'] = ("sans-serif", 14, "bold")
+                    btns_cf[0]['bg'] = '#bd3800'
+                    btns_cf[0]['fg'] = 'white'
+
+                # If status is COMPULSORY1, COMPULSORY2, STYLE_DANCE, UNSTARTED or nothing, we concider not possible to start free dance
+                elif category.status in ['COMPULSORY1', 'COMPULSORY2', 'STYLE_DANCE', 'UNSTARTED']:
+                    btns_cf[0]['text'] = 'Wait'
+                    btns_cf[0]['command'] = partial(messagebox.showinfo, title="Can't start", message="Finish previous dance first")
+                
+                # Free dance ended
+                else:
+                    btns_cf[2]['bg'] = 'PaleGreen1'
+                # End of free dance status statement
+
+                rows.append({
+                    'label': 'Free dance',
+                    'btns_cf': btns_cf
+                })
+            # End of free dance statement
+        # End of if solo dance category
+
+
+        # Creating category manager action
+        # Each row is a program with START | SKATING ORDER | RESULTS btns
+
+        # Actions frame
+        frame = Frame(competition_frame, bg="")
+
+        i=0
+
+        for el in rows:
+
+            # Add program label
+            label = Label(frame, text=el['label'], font=("sans-serif", 14), padx=10, pady=15, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i, column=0, sticky="nesw")
+
+            j=1
+
+            # Add each button
+            for btn_cf in el['btns_cf']:
+
+                # Generate default configuration
+                if not 'font' in btn_cf:
+                    btn_cf['font'] = ("sans-serif", 14)
+                if not 'bg' in btn_cf:
+                    btn_cf['bg'] = 'grey99'
+                if not 'fg' in btn_cf:
+                    btn_cf['fg'] = 'black'
+                
+                btn = Button(frame, text=btn_cf['text'], font=btn_cf['font'], command=btn_cf['command'], bg=btn_cf['bg'], fg=btn_cf['fg'])
+                btn.grid(row=i, column=j, sticky="nesw")
+
+                j+=1
+
+            i+=1
+
+        frame.grid_columnconfigure(0, weight=1)
+
+        frame.pack(fill=X, padx=15)
+
+        competition_frame.grid(row=1, column=0, sticky="nesw", pady=15)
+        # End of competition frame
+
+        # Add a scroll frame for the rest of the elements
+        scrollFrame = VerticalScrolledFrame(self.frame, bg="#0a1526")
+
+        scrollFrameIn = scrollFrame.interior
+        scrollFrame.interior.configure(bg="#0a1526")
+        scrollFrame.canvas.configure(bg="#0a1526")
+
+        frame = Frame(scrollFrameIn, bg="")
+
+        label = Label(frame, text="Skaters ordered by current category", font=("sans-serif", 14, "bold"), bg="#0a1526", fg="white")
+        label.pack(pady=10, padx=10, anchor=NW)
+
+        frame.pack(fill=X, padx=15)
+
+        frame = Frame(scrollFrameIn, bg="#bd3800")
+
+        i=0
+
+        # Table header
+        headers = ['Order', 'Skater', 'status']
+
+        # Here we are creating header list depending on type and activated programs
+        if category.type == 'FREESKATING':
+            if category.short > 0:
+                headers.append('Short')
+            if  category.long > 0:
+                headers.append('Long')
+
+        elif category.type == 'SOLO DANCE':
+            if category.compulsory1 > 0:
+                headers.append('Compulsory 1')
+            if category.compulsory2 > 0:
+                headers.append('Compulsory 2')
+            if category.style_dance > 0:
+                headers.append('Style')
+            if category.free_dance > 0:
+                headers.append('Free')
+            
+
+        j=0
+
+        # Combyning headers in the frame
+        for header in headers:
+            label = Label(frame, text=header, font=("sans-serif", 12, "bold"), padx=10, pady=10, borderwidth=1, relief="groove", bg="#0a1526", fg="white", justify=LEFT,  anchor="w")
+            label.grid(row=i, column=j, sticky="nsew")
+
+            j+=1
+        
+        i+=1
+        # End of table header
+
+
+        # SKATERS LIST
+        # Loop on all skaters in the category and show options to restart the program
+        skaters = category.getSkaters(orderby='current')
+
+        
+        # Foreach skater, display order, name and options
+        for skater in skaters:
+
+            # Add labels to table
+            els = [i, skater.name, skater.status]
+
+            j = 0
+
+            for el in els:
+                label = Label(frame, text=el, bg="#0a1526", fg="white", borderwidth=1, relief="groove", anchor="w", justify=LEFT, font=("sans-serif", 12), padx=10, pady=10)
+                label.grid(row=i, column=j, sticky="nesw")
+
+                j+=1
+
+
+            # Add action buttons
+            els = []
+
+            # Action buttons for FREESKATING
+            if category.type == 'FREESKATING':
+                if category.short > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('short'))
+                    })
+                if category.long > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('long'))
+                    })
+            # End of action buttons for FREESKATING
+
+            # Action buttons for SOLO DANCE
+            elif category.type == 'SOLO DANCE':
+                if category.compulsory1 > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('compulsory1'))
+                    })
+                if category.compulsory2 > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('compulsory2'))
+                    })
+                if category.style_dance > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('style_dance'))
+                    })
+                if category.free_dance > 0:
+                    els.append({
+                        'label': 'Resume',
+                        'command': partial(self.open_program, skater.getProgram('free_dance'))
+                    })
+            # End of action buttons for SOLO DANCE
+
+            for el in els:
+                btn = Button(frame, text=el['label'], font=("sans-serif", 12), command=el['command'])
+                btn.grid(row=i, column=j, sticky="nesw")
+                j+=1
+
+            i += 1
+
+        Grid.columnconfigure(frame, 0, minsize=100)
+        Grid.columnconfigure(frame, 1, weight=1)
+
+        frame.pack(fill=X, padx=15)
+        # End of Skaters list
+
+        scrollFrame.grid(row=1, column=1, sticky="nesw")
+
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky="nesw")
+    # End of list_skaters()
+    
 
 if __name__ == "__main__":
 

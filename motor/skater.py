@@ -308,6 +308,32 @@ class Skater:
         else:
             return None
 
+    # Get a program by its name
+    def getProgram(self, name):
+
+        name = name.lower()
+
+        c = self.conn.cursor()
+        c.row_factory = tools.dict_factory
+        c.execute('SELECT * FROM `programs` WHERE `skater_id` = ? AND `program_name` LIKE ? ORDER BY `id` LIMIT 1', (self.id, name))
+        data = c.fetchone()
+
+        # Program is currently started
+        if data:
+            program = Program(data)
+
+        # Program is not started
+        else:
+            program = Program({
+                'skater' : self.name,
+                'skater_id' : self.id,
+                'program_name': name,
+                'category': self.category,
+                'session': self.session
+            })
+
+        return program
+
     def calculate(self):
         initial_score = 0
         if self.initial_score:

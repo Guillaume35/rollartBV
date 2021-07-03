@@ -136,6 +136,10 @@ class BoxElement():
         Grid.rowconfigure(frame_types, 0, weight=1)
 
         # list elements types
+
+        btnLabels = []
+        
+        # Compulsory element
         if self.program.program_name.upper() in ['COMPULSORY1', 'COMPULSORY2']:
             patterns = tools.compulsoryPatterns()
 
@@ -144,16 +148,23 @@ class BoxElement():
             else:
                 pat = self.category.compulsory2_pattern
 
-            pattern = patterns[pat]
+            # Pattern dance exists
+            if pat in patterns:
+                pattern = patterns[pat]
 
-            btnLabels = []
-
-            for i in range(pattern[0]):
-                btnLabels.append('PatternSection'+str(i+1))
+                for i in range(pattern[0]):
+                    btnLabels.append('PatternSection'+str(i+1))
+            
+            # Pattern misconfigured
+            else:
+                messagebox.showerror(title="Unknown pattern", message="Category is badly configured : pattern dance is unknown (val="+pat+")")
+        # Style dance element
         elif self.program.program_name.upper() == 'STYLE_DANCE':
             btnLabels = ['Pattern', 'Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling']
+        # Freedance element
         elif self.program.program_name.upper() == 'FREE_DANCE':
             btnLabels = ['Footwork', 'ArtisticFootwork', 'Cluster', 'Traveling', 'Choreo']
+        # Freeskating element
         else:
             btnLabels = ['SoloJump', 'ComboJump', 'SoloSpin', 'ComboSpin', 'Step', 'Choreo']
 

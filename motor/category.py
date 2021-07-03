@@ -31,6 +31,22 @@ class Category:
 
         self._type = 'FREESKATING'
         self._status = None
+        self._short = 0.0
+        self._long = 0.0
+        self._compulsory1 = 0.0
+        self._compulsory2 = 0.0
+        self._style_dance = 0.0
+        self._free_dance = 0.0
+        self._short_components = 0.0
+        self._long_components = 0.0
+        self._compulsory_components = 0.0
+        self._style_dance_components = 0.0
+        self._free_dance_components = 0.0
+        self._technical_specialist = ''
+        self._controller = ''
+        self._assistant = ''
+        self._data_operator = ''
+        self._judges = 0
 
         home_path = str(Path.home())
         db_path = home_path + '/.rollartBV/structure.db'
@@ -127,6 +143,140 @@ class Category:
     def status(self, value):
         self._status = value
 
+    @property
+    def short(self):
+        return tools.floatVal(self._short)
+    
+    @short.setter
+    def short(self, value):
+        self._short = value
+    
+    @property
+    def long(self):
+        return tools.floatVal(self._long)
+    
+    @long.setter
+    def long(self, value):
+        self._long = value
+    
+    @property
+    def compulsory1(self):
+        return tools.floatVal(self._compulsory1)
+    
+    @compulsory1.setter
+    def compulsory1(self, value):
+        self._compulsory1 = value
+    
+    @property
+    def compulsory2(self):
+        return tools.floatVal(self._compulsory2)
+    
+    @compulsory2.setter
+    def compulsory2(self, value):
+        self._compulsory2 = value
+
+    @property
+    def style_dance(self):
+        return tools.floatVal(self._style_dance)
+    
+    @style_dance.setter
+    def style_dance(self, value):
+        self._style_dance = value
+    
+    @property
+    def free_dance(self):
+        return tools.floatVal(self._free_dance)
+    
+    @free_dance.setter
+    def free_dance(self, value):
+        self._free_dance = value
+    
+    @property
+    def short_components(self):
+        return tools.floatVal(self._short_components)
+    
+    @short_components.setter
+    def short_components(self, value):
+        self._short_components = value
+    
+    @property
+    def long_components(self):
+        return tools.floatVal(self._long_components)
+    
+    @long_components.setter
+    def long_components(self, value):
+        self._long_components = value
+
+    @property
+    def compulsory_components(self):
+        return tools.floatVal(self._compulsory_components)
+    
+    @compulsory_components.setter
+    def compulsory_components(self, value):
+        self._compulsory_components = value
+    
+    @property
+    def style_dance_components(self):
+        return tools.floatVal(self._style_dance_components)
+    
+    @style_dance_components.setter
+    def style_dance_components(self, value):
+        self._style_dance_components = value
+    
+    @property
+    def free_dance_components(self):
+        return tools.floatVal(self._free_dance_components)
+    
+    @free_dance_components.setter
+    def free_dance_components(self, value):
+        self._free_dance_components = value
+    
+    @property
+    def technical_specialist(self):
+        return tools.stringVal(self._technical_specialist)
+    
+    @technical_specialist.setter
+    def technical_specialist(self, value):
+        self._technical_specialist = value
+
+    @property
+    def controller(self):
+        return tools.stringVal(self._controller)
+    
+    @controller.setter
+    def controller(self, value):
+        self._controller = value
+    
+    @property
+    def assistant(self):
+        return tools.stringVal(self._assistant)
+    
+    @assistant.setter
+    def assistant(self, value):
+        self._assistant = value
+    
+    @property
+    def data_operator(self):
+        return tools.stringVal(self._data_operator)
+    
+    @data_operator.setter
+    def data_operator(self, value):
+        self._data_operator = value
+
+    @property
+    def judges(self):
+        self._judges = tools.intVal(self._judges)
+        if self._judges < 0:
+            self._judges = 0
+        return self._judges
+    
+    @judges.setter
+    def judges(self, value):
+        value = tools.intVal(value)
+        if value < 0:
+            value = 0
+        self._judges = value
+
     # Hydrate values to class
     def hydrate(self, data):
 
@@ -151,7 +301,12 @@ class Category:
             'compulsory_components': 1.0,
             'style_dance_components': 1.0,
             'free_dance_components': 1.0,
-            'status': 'unstarted'
+            'status': 'unstarted',
+            'technical_specialist': None,
+            'controller': None,
+            'assistant': None,
+            'data_operator': None,
+            'judges': 0
         }
 
         for key in values:
@@ -179,6 +334,11 @@ class Category:
         self.style_dance_components = values['style_dance_components']
         self.free_dance_components = values['free_dance_components']
         self.status = values['status']
+        self.technical_specialist = values['technical_specialist']
+        self.controller = values['controller']
+        self.assistant = values['assistant']
+        self.data_operator = values['data_operator']
+        self.judges = values['judges']
 
 
     # record data to database
@@ -209,9 +369,14 @@ class Category:
                     `compulsory_components`,
                     `style_dance_components`,
                     `free_dance_components`,
-                    `status`
+                    `status`,
+                    `technical_specialist`,
+                    `controller`,
+                    `assistant`,
+                    `data_operator`,
+                    `judges`
                 ) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', 
                 (
                     self.name, 
                     self.order, 
@@ -231,7 +396,12 @@ class Category:
                     self.compulsory_components,
                     self.style_dance_components,
                     self.free_dance_components,
-                    self.status
+                    self.status,
+                    self.technical_specialist,
+                    self.controller,
+                    self.assistant,
+                    self.data_operator,
+                    self.judges
                 ))
             # get last id
             c.execute('SELECT `id` FROM `categories` ORDER BY `id` DESC LIMIT 1')
@@ -259,7 +429,12 @@ class Category:
                             `compulsory_components` = ?,
                             `style_dance_components` = ?,
                             `free_dance_components` = ?,
-                            `status` = ?
+                            `status` = ?,
+                            `technical_specialist` = ?,
+                            `controller` = ?,
+                            `assistant` = ?,
+                            `data_operator` = ?,
+                            `judges` = ?
                         WHERE `id` = ?''', 
                     (
                         
@@ -282,6 +457,11 @@ class Category:
                         self.style_dance_components, 
                         self.free_dance_components, 
                         self.status, 
+                        self.technical_specialist,
+                        self.controller,
+                        self.assistant,
+                        self.data_operator,
+                        self.judges,
                         self.id
                     ))
 
@@ -309,7 +489,12 @@ class Category:
             'compulsory_components': self.compulsory_components,
             'style_dance_components': self.style_dance_components,
             'free_dance_components': self.free_dance_components,
-            'status': self.status
+            'status': self.status,
+            'technical_specialist': self.technical_specialist,
+            'controller': self.controller,
+            'assistant': self.assistant,
+            'data_operator': self.data_operator,
+            'judges': self.judges
         }
 
         return data
@@ -374,16 +559,52 @@ class Category:
             return None
 
     # Get all skaters in category
-    def getSkaters(self):
+    def getSkaters(self, orderby="order"):
+
+        # define order by statement
+        if orderby == 'current':
+            if self.type == 'FREESKATING':
+                # Order by order for short program
+                if self.status in ('SHORT', 'UNSTARTED'):
+                    orderby = 'order'
+                # Long program status, order by short results or by order if no short
+                else:
+                    if self.short > 0:
+                        orderby = 'short'
+                    else:
+                        orderby = 'order'
+            # End of Freeskating statement
+
+            # Solo dance statement
+            elif self.type == 'SOLO DANCE':
+                # Orderby order for compulsory and unstarted status
+                if self.status in ('COMPULSORY1', 'COMPULSORY2', 'UNSTARTED'):
+                    orderby = 'order'
+                # Style dance order by compulsory if exists or order
+                elif self.status == 'STYLE_DANCE':
+                    if self.compulsory1 > 0 or self.compulsory2 > 0:
+                        orderby = 'compulsory_score'
+                    else:
+                        orderby = 'order'
+                # Free dance order by style dance if exists, compulsory if exists or order
+                elif self.status in ('FREE_DANCE', 'END'):
+                    if self.style_dance > 0:
+                        orderby = 'style_dance_score'
+                    elif self.compulsory1 > 0 or self.compulsory2 > 0:
+                        orderby = 'compulsory_score'
+                    else:
+                        orderby = 'order'
+        # End of order by statement
+
         c = self.conn.cursor()
         c.row_factory = tools.dict_factory
-        c.execute('SELECT * FROM `skaters` WHERE `category` = ? ORDER BY `order`, `id`', (self.id, ))
+        c.execute('SELECT * FROM `skaters` WHERE `category` = ? ORDER BY ?, `id`', (self.id, orderby))
         data = c.fetchall()
 
         skaters = []
 
         for d in data:
-            skaters.append(Skater(data))
+            skaters.append(Skater(d))
 
         return skaters
 
@@ -453,7 +674,12 @@ class Category:
             `compulsory_components` REAL,
             `style_dance_components` REAL,
             `free_dance_components` REAL,
-            `status` TEXT)''')
+            `status` TEXT,
+            `technical_specialist` TEXT
+            `controller` TEXT
+            `assistant` TEXT
+            `data_operator` TEXT
+            `judges` TEXT)''')
 
         c.execute("PRAGMA table_info(`categories`)")
         fields = c.fetchall()
@@ -482,7 +708,12 @@ class Category:
             'compulsory_components': 'REAL',
             'style_dance_components': 'REAL',
             'free_dance_components': 'REAL',
-            'status': 'TEXT'
+            'status': 'TEXT',
+            'technical_specialist': 'TEXT',
+            'controller': 'TEXT',
+            'assistant': 'TEXT',
+            'data_operator': 'TEXT',
+            'judges': 'TEXT'
         }
 
         for field, type in fields.items():

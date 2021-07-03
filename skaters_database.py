@@ -62,7 +62,10 @@ class SkaterApp:
         }
 
         # Create main window
-        self.window = Tk()
+        if self.parent:
+            self.window = Toplevel(self.parent.window) # Tk()
+        else:
+            self.window = Tk()
 
         # Customizing self.window
         self.window.title("Skaters database - Category "+self.category.name+" "+self.category.type+" - RollArt BV")

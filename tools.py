@@ -44,6 +44,20 @@ def floatVal(value):
         value = 0.0
     return float(value)
 
+# stringVal()
+# convert value to string even for None value
+def stringVal(value):
+    if not value:
+        value = ''
+    return str(value)
+
+# intVal()
+# convert value to int even for None value
+def intVal(value):
+    if not value:
+        value = 0
+    return int(value)
+
 # compulsoryPatterns()
 # get all compulsory patterns
 def compulsoryPatterns():

@@ -18,7 +18,6 @@
 # Guillaume MODARD <guillaumemodard@gmail.com>
 
 import sqlite3
-import os
 from pathlib import Path
 import time
 import tools
@@ -67,7 +66,9 @@ class Session:
             'name': 'Unnamed',
             'date': time.strftime('%Y-%m-%d'),
             'display_url': 'https://localhost/rollart/data.php?skaterName={{skaterName}}&skaterTeam={{skaterTeam}}&liveScoreEl={{liveScoreEl}}&liveScoreVal={{liveScoreVal}}&liveScoreSk={{liveScoreSk}}&finalScoreTechnical={{finalScoreTechnical}}&finalScoreComponents={{finalScoreComponents}}&finalScoreDeduction={{finalScoreDeduction}}&segmentScore={{segmentScore}}&finalScore={{finalScore}}&rank={{rank}}',
-            'online': 0
+            'online': 0,
+            'network': 0,
+            'port': 4455
         }
 
         for key in values:
@@ -80,6 +81,8 @@ class Session:
         self.id = values['id']
         self.display_url = values['display_url']
         self.online = values['online']
+        self.network = values['network']
+        self.port = values['port']
 
     # record data to database
     def record(self):
@@ -95,9 +98,11 @@ class Session:
                     `name`, 
                     `date`,
                     `display_url`,
-                    `online`
+                    `online`,
+                    `network`,
+                    `port`
                 ) 
-                VALUES (?,?,?,?)''', (self.name, self.date, self.display_url, self.online))
+                VALUES (?,?,?,?,?,?)''', (self.name, self.date, self.display_url, self.online, self.network, self.port))
 
             # get last id
             c.execute('SELECT `id` FROM `sessions` ORDER BY `id` DESC LIMIT 1')
@@ -110,13 +115,17 @@ class Session:
                     `name` = ?, 
                     `date` = ?,
                     `display_url` = ?,
-                    `online` = ?
+                    `online` = ?,
+                    `network` = ?,
+                    `port` = ?
                 WHERE `id` = ?''', 
                 (
                     self.name, 
                     self.date, 
                     self.display_url, 
                     self.online, 
+                    self.network,
+                    self.port,
                     self.id
                 ))
 
@@ -129,7 +138,9 @@ class Session:
             'name': self.name,
             'date': self.date,
             'display_url': self.display_url,
-            'online': self.online
+            'online': self.online,
+            'network': self.network,
+            'port': self.port
         }
 
         return data
@@ -210,7 +221,9 @@ class Session:
             `date` TEXT,
             `lock` INTEGER,
             `display_url` TEXT,
-            `online` INTEGER)''')
+            `online` INTEGER,
+            `network` INTEGER,
+            `port` INTEGER)''')
 
         c.execute("PRAGMA table_info(`sessions`)")
         fields = c.fetchall()
@@ -225,7 +238,9 @@ class Session:
             'date': 'TEXT',
             'lock': 'INTEGER',
             'display_url': 'TEXT',
-            'online': 'INTEGER'
+            'online': 'INTEGER',
+            'network': 'INTEGER',
+            'port': 'INTEGER'
         }
 
         for field, type in fields.items():

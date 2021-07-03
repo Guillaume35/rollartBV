@@ -21,6 +21,7 @@ import sqlite3
 from tkinter import *
 from apps.list import *
 from motor.category import *
+from skaters_database import *
 import tools
 
 class CategoryApp:
@@ -37,11 +38,16 @@ class CategoryApp:
         self.window = None
         self.frame = None
         self.category = None
+        self.session = parent.session
 
         self.shortVar = None
         self.longVar = None
         self.shortCompoEntry = None
         self.longCompoEntry = None
+        self.technical_specialistEntry = None
+        self.controlerEntry = None
+        self.assistantEntry = None
+        self.data_operatorEntry = None
 
         self.compulsory1Var = None
         self.compulsory2Var = None
@@ -54,6 +60,9 @@ class CategoryApp:
         self.compulsory2DanceVar = None
         self.style_dancePatternVar = None
         self.statusVar = None
+
+        self.judgesList = []
+        self.judgesFrame = None
 
     def open_window(self):
 
@@ -114,6 +123,10 @@ class CategoryApp:
             {
                 'label': 'Config',
                 'action': self.config
+            },
+            {
+                'label': 'Skaters',
+                'action': self.skaters_list
             }
         ]
 
@@ -136,7 +149,7 @@ class CategoryApp:
         for c in self.window.winfo_children():
             c.destroy()
 
-        self.frame = Frame(self.window, bg="#0a1526")
+        self.frame = Frame(self.window)
 
         self.category = Category(category)
 
@@ -162,22 +175,22 @@ class CategoryApp:
         title_frame.pack(fill=X)
 
         # Form depending on which competition type is selected
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(self.frame)
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_columnconfigure(1, weight=1)
 
         i = 0
 
-        label = Label(frame, text="Option", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label = Label(frame, text="Option", font=("sans-serif", 10, "bold"))
         label.grid(row=0, column=i, pady=10, sticky="w")
         i += 1
 
         if self.category.type == "SOLO DANCE":
-            label = Label(frame, text="Pattern", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+            label = Label(frame, text="Pattern", font=("sans-serif", 10, "bold"))
             label.grid(row=0, column=i, pady=10, sticky="w")
             i += 1
 
-        label = Label(frame, text="Components coef", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label = Label(frame, text="Components coef", font=("sans-serif", 10, "bold"))
         label.grid(row=0, column=i, pady=10, sticky="w")
 
         # FREESKATING has the following options
@@ -301,11 +314,11 @@ class CategoryApp:
 
         frame.pack(fill=X, pady=10, padx=10)
 
-        frame = Frame(self.frame, bg="#0a1526")
+        frame = Frame(self.frame)
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_columnconfigure(1, weight=1)
 
-        label = Label(frame, text="Status", font=("sans-serif", 10, "bold"), bg="#0a1526", fg="white")
+        label = Label(frame, text="Category status", font=("sans-serif", 10))
         label.grid(row=0, column=0, pady=10, sticky="w")
 
         self.statusVar = StringVar()
@@ -317,11 +330,105 @@ class CategoryApp:
 
         frame.pack(fill=X, pady=10, padx=10)
 
+        # Judges and technical panel system
+        label = Label(self.frame, text="Technical panel and judges", font=('sans-serif', 14, "bold"))
+        label.pack(fill=X, pady=10, padx=10, anchor=W)
+
+        frame = Frame(self.frame)
+        frame.grid_columnconfigure(0, weight=1)
+
+        frame_panel = Frame(frame)
+        frame_panel.grid_columnconfigure(0, weight=1)
+        frame_panel.grid_columnconfigure(1, weight=1)
+
+        labels = ['technical_specialist', 'controller', 'assistant', 'data_operator']
+        i=0
+
+        for lab in labels:
+            text = lab.replace('_', ' ')
+            text = text[0].upper() + text[1:]
+
+            label = Label(frame_panel, text=text)
+            label.grid(row=i, column=0, sticky="w")
+
+            entry = Entry(frame_panel, borderwidth=1, relief='flat')
+            entry.insert(0, getattr(self.category, lab))
+            entry.grid(row=i, column=1, sticky="nsew")
+
+            setattr(self, lab+'Entry', entry)
+
+            i+=1
+
+        frame_panel.grid(row=0, column=0, sticky="nsew", padx=10)
+
+        # Judges only for network system
+        network = False
+
+        if self.parent:
+            if self.parent.session.network:
+                network = True
+
+        if network:
+
+            self.judgesList = []
+
+            frame.grid_columnconfigure(1, weight=1)
+
+            frame_judges = Frame(frame)
+
+            btn = Button(frame_judges, text="Add judge", command=self.addJudge)
+            btn.pack(fill=X)
+
+            self.judgesFrame = Frame(frame_judges)
+
+            for i in range(self.category.judges):
+                self.addJudge(increment=False, i=i)
+
+            self.judgesFrame.columnconfigure(1, weight=1)
+            self.judgesFrame.pack(fill=X)
+
+            frame_judges.grid(row=0, column=1, sticky="nsew", padx=10)
+
+        frame.pack(fill=X, pady=10)
+
         self.window.grid_columnconfigure(0, weight=1)
         self.window.grid_rowconfigure(0, weight=1)
 
         self.frame.grid(row=0, column=0, sticky="nesw")
     # End of config()
+
+
+    #
+    # addJudge()
+    # Add judge row on config panel
+    def addJudge(self, increment=True, new_row=True, i=0):
+        if increment:
+            self.category.judges += 1
+            i = self.category.judges-1
+
+        if new_row:
+            label = Label(self.judgesFrame, text='Judge '+str(i+1))
+            label.grid(row=i, column=0, sticky="w")
+
+            entry = Entry(self.judgesFrame, borderwidth=1, relief='flat')
+            entry.grid(row=i, column=1, sticky="nsew")
+
+            btn = Button(self.judgesFrame, text="Remove", bg='red', fg='white', command=partial(self.removeJudge, len(self.judgesList)))
+            btn.grid(row=i, column=2, sticky="nsew")
+
+            self.judgesList.append([label, entry, btn])
+    # End of addJudge()
+
+
+    #
+    # removeJudge()
+    # Remove judge row on config panel
+    def removeJudge(self, i):
+        self.category.judges -= 1
+
+        for w in self.judgesList[i]:
+                w.destroy()
+    # End of removeJudge()
 
 
     # 
@@ -353,6 +460,11 @@ class CategoryApp:
             # end of case SOLO DANCE
 
         self.category.status = self.statusVar.get()
+        self.category.technical_specialist = self.technical_specialistEntry.get()
+        self.category.controller = self.controllerEntry.get()
+        self.category.assistant = self.assistantEntry.get()
+        self.category.data_operator = self.data_operatorEntry.get()
+
 
         # Check if something is started in this category.
         # If nothing is started, category status is set to unstarted
@@ -373,3 +485,13 @@ class CategoryApp:
 
         self.list()
     # End of record()
+
+
+    # 
+    # skaters_list()
+    # Manager skaters in a category
+    def skaters_list(self, category):
+        skaterApp = SkaterApp(self, Category(category))
+        skaterApp.open_window()
+    # End of skaters_list()
+        
